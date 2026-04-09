@@ -1,0 +1,14 @@
+services:
+  predly:
+    image: ghcr.io/666ghj/predly:latest
+    # 加速镜像（如拉取缓慢可替换上方地址）
+    # image: ghcr.nju.edu.cn/666ghj/predly:latest
+    container_name: predly
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+      - "5001:5001"
+    restart: unless-stopped
+    volumes:
+      - ./backend/uploads:/app/backend/uploads
