@@ -1,13 +1,13 @@
 """
-配置管理
-统一从项目根目录的 .env 文件加载配置
+Configuration Management
+Loads all configuration from the .env file at the project root
 """
 
 import os
 from dotenv import load_dotenv
 
-# 加载项目根目录的 .env 文件
-# 路径: Predly/.env (相对于 backend/app/config.py)
+# Load .env from the project root directory
+# Path: Predly/.env (relative to backend/app/config.py)
 project_root_env = os.path.join(os.path.dirname(__file__), '../../.env')
 
 if os.path.exists(project_root_env):
@@ -17,13 +17,13 @@ else:
 
 
 class Config:
-    """Flask配置类"""
+    """Flask configuration class"""
     
-    # Flask配置
+    # Flask settings
     SECRET_KEY = os.environ.get('SECRET_KEY', 'predly-secret-key')
     DEBUG = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
     
-    # JSON配置
+    # JSON settings
     JSON_AS_ASCII = False
     
     # ===== Primary LLM (Groq) - 3 keys, auto-rotates on rate limit =====
@@ -44,23 +44,23 @@ class Config:
     LLM_BOOST_BASE_URL = os.environ.get('LLM_BOOST_BASE_URL')
     LLM_BOOST_MODEL_NAME = os.environ.get('LLM_BOOST_MODEL_NAME')
 
-    # Zep配置
+    # Zep configuration
     ZEP_API_KEY = os.environ.get('ZEP_API_KEY')
     
-    # 文件上传配置
+    # File upload settings
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
     UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '../uploads')
     ALLOWED_EXTENSIONS = {'pdf', 'md', 'txt', 'markdown'}
     
-    # 文本处理配置
+    # Text processing settings
     DEFAULT_CHUNK_SIZE = 500
     DEFAULT_CHUNK_OVERLAP = 50
     
-    # OASIS模拟配置
+    # OASIS simulation settings
     OASIS_DEFAULT_MAX_ROUNDS = int(os.environ.get('OASIS_DEFAULT_MAX_ROUNDS', '3'))
     OASIS_SIMULATION_DATA_DIR = os.path.join(os.path.dirname(__file__), '../uploads/simulations')
     
-    # OASIS平台可用动作配置
+    # OASIS available actions per platform
     OASIS_TWITTER_ACTIONS = [
         'CREATE_POST', 'LIKE_POST', 'REPOST', 'FOLLOW', 'DO_NOTHING', 'QUOTE_POST'
     ]
@@ -70,7 +70,7 @@ class Config:
         'TREND', 'REFRESH', 'DO_NOTHING', 'FOLLOW', 'MUTE'
     ]
     
-    # Report Agent配置
+    # Report Agent settings
     REPORT_AGENT_MAX_TOOL_CALLS = int(os.environ.get('REPORT_AGENT_MAX_TOOL_CALLS', '1'))
     REPORT_AGENT_MAX_REFLECTION_ROUNDS = int(os.environ.get('REPORT_AGENT_MAX_REFLECTION_ROUNDS', '1'))
     REPORT_AGENT_TEMPERATURE = float(os.environ.get('REPORT_AGENT_TEMPERATURE', '0.3'))
@@ -92,15 +92,15 @@ class Config:
 
     @classmethod
     def validate(cls):
-        """验证必要配置"""
+        """Validate required configuration"""
         errors = []
         primary_keys = cls.get_primary_keys()
         if not primary_keys:
-            errors.append("LLM_API_KEY_1 未配置")
+            errors.append("LLM_API_KEY_1 is not configured")
         else:
             print(f"✅ Primary LLM: {len(primary_keys)} key(s) configured")
         if not cls.ZEP_API_KEY:
-            errors.append("ZEP_API_KEY 未配置")
+            errors.append("ZEP_API_KEY is not configured")
         if cls.has_boost():
             print(f"✅ Boost LLM: {len(cls.get_boost_keys())} key(s) configured")
         else:

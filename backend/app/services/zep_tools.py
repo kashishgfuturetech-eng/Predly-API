@@ -1429,7 +1429,7 @@ Return a JSON-formatted list of sub-questions."""
                 clean_text = re.sub(r'#{1,6}\s+', '', combined_responses)
                 clean_text = re.sub(r'\{[^}]*tool_name[^}]*\}', '', clean_text)
                 clean_text = re.sub(r'[*_`|>~\-]{2,}', '', clean_text)
-                clean_text = re.sub(r'问题\d+[：:]\s*', '', clean_text)
+                clean_text = re.sub(r'问题\d+[：:]\s*', '', clean_text)  # strip Chinese question prefixes
                 clean_text = re.sub(r'【[^】]+】', '', clean_text)
 
                 # Strategy 1 (primary): Extract complete sentences with substantive content
@@ -1438,7 +1438,7 @@ Return a JSON-formatted list of sub-questions."""
                     s.strip() for s in sentences
                     if 20 <= len(s.strip()) <= 150
                     and not re.match(r'^[\s\W，,；;：:、]+', s.strip())
-                    and not s.strip().startswith(('{', '问题'))
+                    and not s.strip().startswith(('{', '问题'))  # skip JSON objects and Chinese question markers
                 ]
                 meaningful.sort(key=len, reverse=True)
                 key_quotes = [s + "。" for s in meaningful[:3]]
