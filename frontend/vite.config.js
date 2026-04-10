@@ -6,7 +6,9 @@ export default defineConfig({
   server: {
     host: true,
     port: 3000,
-    allowedHosts: 'predly-api.onrender.com',
+    allowedHosts: [
+      'predly-api.onrender.com',
+      'all'],
     proxy: {
       // Dev only: proxies /api → local Flask on 5001
       '/api': {
