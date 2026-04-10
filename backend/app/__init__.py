@@ -70,7 +70,7 @@ def create_app(config_class=Config):
     app.register_blueprint(report_bp, url_prefix='/api/report')
     
     # Health check
-    @app.route('/health')
+    @app.route('/')
     def health():
         return {'status': 'ok', 'service': 'Predly Backend'}
     
