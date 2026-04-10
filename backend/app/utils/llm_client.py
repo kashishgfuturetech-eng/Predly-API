@@ -1,7 +1,7 @@
 """
-LLM客户端封装
-统一使用OpenAI格式调用
-支持多Key智能轮换 - Groq 4 keys + Gemini 3 keys
+LLM client wrapper
+Unified OpenAI-format API calls
+Supports multi-key intelligent rotation - Groq 4 keys + Gemini 3 keys
 
 Key rotation strategy:
 - TPD (tokens per day) error  → mark key exhausted 24h, rotate to next
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class LLMClient:
     """
-    LLM客户端 - 支持多Key智能轮换
+    LLM client - supports multi-key intelligent rotation
 
     Rotation logic:
         - TPD exhausted  → skip key for 24 h, move to next available
