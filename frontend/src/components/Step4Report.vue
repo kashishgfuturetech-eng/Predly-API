@@ -11,7 +11,7 @@
           <span class="material-symbols-outlined" style="font-size:16px">download</span>
           Export PDF
         </button>
-        <button v-if="isComplete" class="btn-primary" @click="$emit('completed')">
+        <button v-if="isComplete" class="btn-primary" @click="$emit('completed', { report_id: activeReportId })">
           Open Interaction
           <span class="material-symbols-outlined" style="font-size:18px">chat</span>
         </button>

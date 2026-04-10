@@ -58,7 +58,7 @@
           v-else-if="currentStep === 'report'"
           :simulation-id="projectData.simulation_id || null"
           :report-id="projectData.report_id || 'REF-PENDING'"
-          @completed="onStepCompleted('report', {})"
+          @completed="onStepCompleted('report', $event)"
         />
 
         <!--
