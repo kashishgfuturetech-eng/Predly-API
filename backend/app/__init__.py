@@ -20,9 +20,10 @@ def create_app(config_class=Config):
     """Flask application factory function"""
     app = Flask(__name__)
     app.config.from_object(config_class)
+    
+    # Single CORS initialization — covers all routes including error responses
     CORS(app, resources={r"/*": {"origins": "*"}})
 
-    
     # JSON encoding: ensure Chinese characters are rendered directly (not as \uXXXX)
     # Flask >= 2.3 uses app.json.ensure_ascii; older versions use JSON_AS_ASCII config
     if hasattr(app, 'json') and hasattr(app.json, 'ensure_ascii'):
