@@ -241,7 +241,7 @@ const emit = defineEmits(['completed'])
 
 // ─── State ───────────────────────────────────────────────────────────────────
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001'
-const API = (path) => `${BASE_URL}/api${path}`
+const API = (path) => `${BASE_URL}${path}`
 
 const maxRounds = ref(100)
 const isStarting = ref(false)
