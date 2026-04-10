@@ -20,6 +20,8 @@ def create_app(config_class=Config):
     """Flask application factory function"""
     app = Flask(__name__)
     app.config.from_object(config_class)
+    CORS(app, resources={r"/*": {"origins": "*"}})
+
     
     # JSON encoding: ensure Chinese characters are rendered directly (not as \uXXXX)
     # Flask >= 2.3 uses app.json.ensure_ascii; older versions use JSON_AS_ASCII config
@@ -38,9 +40,6 @@ def create_app(config_class=Config):
         logger.info("=" * 50)
         logger.info("Predly Backend starting...")
         logger.info("=" * 50)
-    
-    # Enable CORS
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
     
     # Register simulation process cleanup (ensures all simulation processes are terminated on server shutdown)
     from .services.simulation_runner import SimulationRunner
