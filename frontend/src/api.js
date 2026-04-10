@@ -4,7 +4,7 @@
  * Change BASE_URL here if your backend runs on a different port/host.
  */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001'
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001') + '/api'
 
 // ─────────────────────────────────────────────
 // Helpers
