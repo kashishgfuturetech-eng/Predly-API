@@ -1,10 +1,10 @@
 /**
  * api.js — Predly backend connector
- * All calls go to Flask on localhost:5001
+ * All calls go to Flask on localhost:10000
  * Change BASE_URL here if your backend runs on a different port/host.
  */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10000/api'
 
 // ─────────────────────────────────────────────
 // Helpers

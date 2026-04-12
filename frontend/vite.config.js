@@ -8,9 +8,9 @@ export default defineConfig({
     port: 3000,
     allowedHosts: 'all',
     proxy: {
-      // Dev only: proxies /api → local Flask on 5001
+      // Dev only: proxies /api → local Flask on 10000
       '/api': {
-        target: 'http://localhost:5001',
+        target: 'http://localhost:10000',
         changeOrigin: true,
       },
     },

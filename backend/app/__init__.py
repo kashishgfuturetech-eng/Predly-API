@@ -51,6 +51,9 @@ def create_app(config_class=Config):
     # Request logging middleware
     @app.before_request
     def log_request():
+        # Skip OPTIONS preflight requests — let Flask-CORS handle them unimpeded
+        if request.method == 'OPTIONS':
+            return
         logger = get_logger('predly.request')
         logger.debug(f"Request: {request.method} {request.path}")
         if request.content_type and 'json' in request.content_type:
