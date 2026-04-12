@@ -58,7 +58,10 @@ class Config:
     
     # OASIS simulation settings
     OASIS_DEFAULT_MAX_ROUNDS = int(os.environ.get('OASIS_DEFAULT_MAX_ROUNDS', '3'))
-    OASIS_SIMULATION_DATA_DIR = os.path.join(os.path.dirname(__file__), '../uploads/simulations')
+    OASIS_SIMULATION_DATA_DIR = os.environ.get(
+    'SIMULATION_DATA_DIR',
+    os.path.join(os.path.dirname(__file__), '../uploads/simulations')
+)
     
     # OASIS available actions per platform
     OASIS_TWITTER_ACTIONS = [
