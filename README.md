@@ -424,13 +424,3 @@ uv run python scripts/run_twitter_simulation.py
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
 
 Predly's simulation engine is powered by **[OASIS (Open Agent Social Interaction Simulations)](https://github.com/camel-ai/oasis)** by the CAMEL-AI team. Predly has received strategic support and incubation from **[Shanda Group](https://www.shanda.com/)**.
-
----
-
-## Community & Contact
-
-- **Discord**: [Join the server](https://discord.com/channels/1469200078932545606/1469201282077163739)
-- **X / Twitter**: [@predly_ai](https://x.com/predly_ai)
-- **Instagram**: [@predly_ai](https://www.instagram.com/predly_ai/)
-- **Live Demo**: [predly-live-demo](https://666ghj.github.io/predly-demo/)
-- **Careers**: Full-time / internship roles in multi-agent simulation & LLM applications — send CV to **predly@shanda.com**
