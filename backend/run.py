@@ -9,7 +9,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from app import create_app
 from app.config import Config
 
-
 def validate():
     errors = Config.validate()
     if errors:
@@ -18,7 +17,6 @@ def validate():
             print(f"  - {err}")
         sys.exit(1)
     print("Config validated OK", flush=True)
-
 
 validate()
 
