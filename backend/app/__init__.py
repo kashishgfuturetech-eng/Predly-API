@@ -1,7 +1,7 @@
 """
 Predly Backend - Flask Application Factory
 """
-
+"""
 import os
 import warnings
 warnings.filterwarnings("ignore", message=".*resource_tracker.*")
@@ -78,4 +78,22 @@ def create_app(config_class=Config):
     if should_log_startup:
         logger.info("Predly Backend started successfully")
 
-    return app
+    return app"""
+
+from .api import graph_bp
+from .api import simulation_bp
+from .api import report_bp
+
+
+def _add_cors(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    return response
+
+
+graph_bp.after_request(_add_cors)
+simulation_bp.after_request(_add_cors)
+report_bp.after_request(_add_cors)
+
+__all__ = ['graph_bp', 'simulation_bp', 'report_bp']
