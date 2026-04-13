@@ -226,7 +226,7 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 #### Step 1 — Clone & configure
 
 ```bash
-git clone https://github.com/666ghj/Predly.git
+git clone https://github.com/kashishgfuturetech-eng/Predly-API.git
 cd Predly
 
 # Copy and fill in environment variables
