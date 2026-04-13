@@ -1838,8 +1838,10 @@ def stop_simulation():
 
 # ============== Real-time Status Monitoring Endpoints ==============
 
-@simulation_bp.route('/<simulation_id>/run-status', methods=['GET'])
+@simulation_bp.route('/<simulation_id>/run-status', methods=['GET', 'OPTIONS'])
 def get_run_status(simulation_id: str):
+    if request.method == 'OPTIONS':
+        return {}, 204
     """
     Get real-time simulation run status (for frontend polling)
     
@@ -1997,8 +1999,10 @@ def get_run_status_detail(simulation_id: str):
         }), 500
 
 
-@simulation_bp.route('/<simulation_id>/actions', methods=['GET'])
+@simulation_bp.route('/<simulation_id>/actions', methods=['GET', 'OPTIONS'])
 def get_simulation_actions(simulation_id: str):
+    if request.method == 'OPTIONS':
+        return {}, 204
     """
     Get Agent action history for a simulation
     
