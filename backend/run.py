@@ -5,6 +5,17 @@ Predly Backend 启动入口
 import os
 import sys
 
+# Bind port IMMEDIATELY before any other imports
+# This is critical for Render's port scan
+import socket
+port = int(os.environ.get('PORT', 10000))
+_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+_sock.bind(('0.0.0.0', port))
+_sock.listen(5)
+print(f"Port {port} bound successfully", flush=True)
+
+# Now do slow imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app import create_app
@@ -26,14 +37,13 @@ class CORSMiddleware:
             return start_response(status, headers, exc_info)
 
         if environ.get('REQUEST_METHOD') == 'OPTIONS':
-            body = b''
             cors_start_response('204 No Content', [
                 ('Access-Control-Allow-Origin', '*'),
                 ('Access-Control-Allow-Headers', 'Content-Type, Authorization'),
                 ('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS'),
                 ('Content-Length', '0'),
             ])
-            return [body]
+            return [b'']
 
         return self.app(environ, cors_start_response)
 
@@ -50,9 +60,11 @@ def main():
     app.wsgi_app = CORSMiddleware(app.wsgi_app)
 
     host = os.environ.get('FLASK_HOST', '0.0.0.0')
-    port = int(os.environ.get('PORT', os.environ.get('FLASK_PORT', 10000)))
 
-    app.run(host=host, port=port, debug=False, threaded=True)
+    from werkzeug.serving import make_server
+    server = make_server(host, port, app, threaded=True, fd=_sock.fileno())
+    print(f"Predly Backend running on {host}:{port}", flush=True)
+    server.serve_forever()
 
 
 if __name__ == '__main__':
