@@ -2,12 +2,14 @@
 Predly Backend - Flask Application Factory
 """
 """
+Predly Backend - Flask Application Factory
+"""
+
 import os
 import warnings
 warnings.filterwarnings("ignore", message=".*resource_tracker.*")
 
 from flask import Flask, request, make_response
-from flask_cors import CORS
 from .config import Config
 from .utils.logger import setup_logger, get_logger
 
@@ -19,11 +21,9 @@ def create_app(config_class=Config):
     # ── CORS ──────────────────────────────────────────────
     @app.after_request
     def apply_cors(response):
-        origin = request.headers.get('Origin', '*')
-        response.headers['Access-Control-Allow-Origin'] = origin
-        response.headers['Access-Control-Allow-Credentials'] = 'true'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
         return response
 
     @app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
@@ -78,22 +78,4 @@ def create_app(config_class=Config):
     if should_log_startup:
         logger.info("Predly Backend started successfully")
 
-    return app"""
-
-from .api import graph_bp
-from .api import simulation_bp
-from .api import report_bp
-
-
-def _add_cors(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-    return response
-
-
-graph_bp.after_request(_add_cors)
-simulation_bp.after_request(_add_cors)
-report_bp.after_request(_add_cors)
-
-__all__ = ['graph_bp', 'simulation_bp', 'report_bp']
+    return app
