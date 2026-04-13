@@ -22,7 +22,27 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
     
     # Single CORS initialization — covers all routes including error responses
-    CORS(app, resources={r"/*": {"origins": "*"}})
+    CORS(app, 
+     resources={r"/*": {"origins": "*"}},
+     allow_headers=["Content-Type", "Authorization"],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     supports_credentials=False)
+    
+    @app.after_request
+    def add_cors_headers(response):
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        return response
+
+    @app.before_request
+    def handle_options():
+        if request.method == 'OPTIONS':
+            response = app.make_default_options_response()
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        return response
 
     # JSON encoding: ensure Chinese characters are rendered directly (not as \uXXXX)
     # Flask >= 2.3 uses app.json.ensure_ascii; older versions use JSON_AS_ASCII config
