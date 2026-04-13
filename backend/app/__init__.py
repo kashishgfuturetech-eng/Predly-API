@@ -38,11 +38,12 @@ def create_app(config_class=Config):
     @app.before_request
     def handle_options():
         if request.method == 'OPTIONS':
-            response = app.make_default_options_response()
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-        return response
+            res = app.make_response('')
+            res.headers['Access-Control-Allow-Origin'] = '*'
+            res.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+            res.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+            res.status_code = 204
+            return res
 
     # JSON encoding: ensure Chinese characters are rendered directly (not as \uXXXX)
     # Flask >= 2.3 uses app.json.ensure_ascii; older versions use JSON_AS_ASCII config
