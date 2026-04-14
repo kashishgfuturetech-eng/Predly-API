@@ -382,7 +382,8 @@ def prepare_simulation():
             "entity_types": ["Student", "PublicFigure"],  // optional, specify entity types
             "use_llm_for_profiles": true,                 // optional, whether to use LLM to generate profiles
             "parallel_profile_count": 5,                  // optional, number of parallel profile generations, default 5
-            "force_regenerate": false                     // optional, force regeneration, default false
+            "force_regenerate": false,                    // optional, force regeneration, default false
+            "agent_count": 50                             // optional, limit number of agents to generate (default: all entities)
         }
     
     Returns:
@@ -467,6 +468,14 @@ def prepare_simulation():
         entity_types_list = data.get('entity_types')
         use_llm_for_profiles = data.get('use_llm_for_profiles', True)
         parallel_profile_count = data.get('parallel_profile_count', 5)
+        agent_count = data.get('agent_count')  # optional: limit number of agents generated
+        if agent_count is not None:
+            try:
+                agent_count = int(agent_count)
+                if agent_count <= 0:
+                    agent_count = None
+            except (ValueError, TypeError):
+                agent_count = None
         
         # ========== Synchronously get entity count (before starting background task) ==========
         # This allows the frontend to immediately get the expected total Agent count after calling prepare
@@ -583,7 +592,8 @@ def prepare_simulation():
                     defined_entity_types=entity_types_list,
                     use_llm_for_profiles=use_llm_for_profiles,
                     progress_callback=progress_callback,
-                    parallel_profile_count=parallel_profile_count
+                    parallel_profile_count=parallel_profile_count,
+                    agent_count=agent_count
                 )
                 
                 # Task complete
@@ -616,7 +626,8 @@ def prepare_simulation():
                 "message": "Preparation task started. Check progress via /api/simulation/prepare/status",
                 "already_prepared": False,
                 "expected_entities_count": state.entities_count,  # Expected total Agent count
-                "entity_types": state.entity_types  # Entity type list
+                "entity_types": state.entity_types,  # Entity type list
+                "agent_count_requested": agent_count  # agent_count limit if specified
             }
         })
         
@@ -819,10 +830,12 @@ def configure_simulation():
             time_config['total_simulation_hours'] = int(data['duration_hours'])
 
         if data.get('max_rounds') is not None:
-            # Store as minutes_per_round: total_hours*60 / max_rounds
+            # Store max_rounds directly AND as minutes_per_round for compatibility
             try:
+                mr = int(data['max_rounds'])
+                existing_config['max_rounds'] = mr  # stored directly for easy reading at start
                 total_minutes = time_config.get('total_simulation_hours', 72) * 60
-                time_config['minutes_per_round'] = max(1, total_minutes // int(data['max_rounds']))
+                time_config['minutes_per_round'] = max(1, total_minutes // mr)
             except (ZeroDivisionError, TypeError):
                 pass
 
@@ -842,14 +855,37 @@ def configure_simulation():
             try:
                 ac = int(data['agent_count'])
                 existing_config['agent_count'] = ac
-                # Also propagate into per-agent configs if present
+                # Trim agent_configs in the simulation config JSON
                 agent_configs = existing_config.get('agent_configs', [])
-                if agent_configs:
-                    # Trim or extend list length to match agent_count (best-effort)
-                    if len(agent_configs) > ac:
-                        existing_config['agent_configs'] = agent_configs[:ac]
-            except (TypeError, ValueError):
-                pass
+                if agent_configs and len(agent_configs) > ac:
+                    existing_config['agent_configs'] = agent_configs[:ac]
+
+                # Also trim the actual reddit_profiles.json to match agent_count
+                reddit_profiles_path = os.path.join(sim_dir, 'reddit_profiles.json')
+                if os.path.exists(reddit_profiles_path):
+                    with open(reddit_profiles_path, 'r', encoding='utf-8') as f:
+                        reddit_profiles = json.load(f)
+                    if isinstance(reddit_profiles, list) and len(reddit_profiles) > ac:
+                        logger.info(f"Trimming reddit_profiles.json from {len(reddit_profiles)} to {ac} agents")
+                        with open(reddit_profiles_path, 'w', encoding='utf-8') as f:
+                            json.dump(reddit_profiles[:ac], f, ensure_ascii=False, indent=2)
+
+                # Also trim twitter_profiles.csv to match agent_count
+                twitter_profiles_path = os.path.join(sim_dir, 'twitter_profiles.csv')
+                if os.path.exists(twitter_profiles_path):
+                    import csv as _csv
+                    with open(twitter_profiles_path, 'r', encoding='utf-8') as f:
+                        reader = _csv.DictReader(f)
+                        tw_profiles = list(reader)
+                        fieldnames = reader.fieldnames
+                    if tw_profiles and len(tw_profiles) > ac:
+                        logger.info(f"Trimming twitter_profiles.csv from {len(tw_profiles)} to {ac} agents")
+                        with open(twitter_profiles_path, 'w', encoding='utf-8', newline='') as f:
+                            writer = _csv.DictWriter(f, fieldnames=fieldnames)
+                            writer.writeheader()
+                            writer.writerows(tw_profiles[:ac])
+            except (TypeError, ValueError) as e:
+                logger.warning(f"agent_count processing error: {e}")
 
         # ── Platform override ──────────────────────────────────────────────────
         platform = data.get('platform', '').strip().lower()
@@ -1635,10 +1671,44 @@ def start_simulation():
                 "error": "Please provide simulation_id"
             }), 400
 
-        platform = data.get('platform', 'parallel')
-        max_rounds = data.get('max_rounds')  # optional: max simulation rounds
-        enable_graph_memory_update = data.get('enable_graph_memory_update', False)  # optional: enable graph memory update
-        force = data.get('force', False)  # optional: force restart
+        platform = data.get('platform', None)  # will fall back to config file below
+        max_rounds = data.get('max_rounds', None)  # optional: max simulation rounds
+        enable_graph_memory_update = data.get('enable_graph_memory_update', False)
+        force = data.get('force', False)
+
+        # ── Auto-read saved config values when not explicitly provided ──────────
+        sim_dir_early = os.path.join(Config.OASIS_SIMULATION_DATA_DIR, simulation_id)
+        saved_config_path = os.path.join(sim_dir_early, 'simulation_config.json')
+        if os.path.exists(saved_config_path):
+            try:
+                with open(saved_config_path, 'r', encoding='utf-8') as _f:
+                    saved_cfg = json.load(_f)
+
+                # Read max_rounds from saved config if not provided by caller
+                if max_rounds is None:
+                    time_cfg = saved_cfg.get('time_config', {})
+                    total_hours = time_cfg.get('total_simulation_hours', 72)
+                    mins_per_round = max(time_cfg.get('minutes_per_round', 60), 1)
+                    computed_rounds = int(total_hours * 60 / mins_per_round)
+                    # Also check if a direct max_rounds was stored
+                    direct_max = saved_cfg.get('max_rounds')
+                    if direct_max:
+                        max_rounds = int(direct_max)
+                    elif computed_rounds > 0:
+                        max_rounds = computed_rounds
+                    logger.info(f"Auto-resolved max_rounds={max_rounds} from simulation_config.json")
+
+                # Read platform from saved config if not provided by caller
+                if platform is None:
+                    cfg_platform = saved_cfg.get('platform', '').strip().lower()
+                    platform = cfg_platform if cfg_platform in ('reddit', 'twitter') else 'parallel'
+                    logger.info(f"Auto-resolved platform={platform} from simulation_config.json")
+            except Exception as _e:
+                logger.warning(f"Could not read simulation_config.json for auto-resolution: {_e}")
+
+        # Apply defaults if still None after config read
+        if platform is None:
+            platform = 'parallel'
 
         # Validate max_rounds parameter
         if max_rounds is not None:

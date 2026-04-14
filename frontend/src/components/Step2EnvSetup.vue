@@ -311,19 +311,22 @@ async function generatePersonas() {
   phaseError.value[1] = ''
   statusMsg.value = 'Querying knowledge graph for agent seeds…'
   try {
-    const res = await prepareSimulation(simulationId.value, props.projectData.project_id)
+    const agentCount = parseInt(simConfig.value.agentCount) || null
+    const res = await prepareSimulation(
+      simulationId.value,
+      props.projectData.project_id,
+      { agentCount }
+    )
     if (!res.success) throw new Error(res.error || 'Prepare failed')
 
-    let result = res.data
+    // Poll the simulation-specific prepare/status endpoint
     if (res.data?.task_id) {
-      statusMsg.value = 'Building agent memories — this takes 1–5 min on CPU…'
-      result = await pollTask(res.data.task_id, 4000)
+      statusMsg.value = 'Building agent memories — this takes 1–5 min…'
+      await pollPrepareTask(res.data.task_id, simulationId.value)
     }
 
-    // Backend may return profiles array directly or inside a key
-    const rawProfiles = result?.profiles || result?.agents || result?.data || []
-    profiles.value = Array.isArray(rawProfiles) ? rawProfiles : []
-
+    // Fetch the generated profiles from the simulation
+    await loadProfiles()
     phase.value = 2
   } catch (err) {
     phaseError.value[1] = err.message
@@ -333,19 +336,68 @@ async function generatePersonas() {
   }
 }
 
+async function pollPrepareTask(taskId, simId, intervalMs = 4000, timeoutMs = 600000) {
+  const start = Date.now()
+  return new Promise((resolve, reject) => {
+    const id = setInterval(async () => {
+      if (Date.now() - start > timeoutMs) {
+        clearInterval(id)
+        reject(new Error('Preparation timed out — check backend logs.'))
+        return
+      }
+      try {
+        const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10000/api'
+        const res = await fetch(`${BASE_URL}/simulation/prepare/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task_id: taskId, simulation_id: simId }),
+        })
+        const data = await res.json()
+        const task = data.data
+        statusMsg.value = task?.message || 'Preparing…'
+        if (task?.status === 'completed' || task?.status === 'ready' || task?.already_prepared) {
+          clearInterval(id)
+          resolve(task)
+        }
+        if (task?.status === 'failed') {
+          clearInterval(id)
+          reject(new Error(task.error || 'Preparation failed'))
+        }
+      } catch (e) {
+        console.warn('Poll error (will retry):', e.message)
+      }
+    }, intervalMs)
+  })
+}
+
+async function loadProfiles() {
+  try {
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10000/api'
+    const res = await fetch(`${BASE_URL}/simulation/${simulationId.value}/profiles/realtime?platform=reddit`)
+    const data = await res.json()
+    profiles.value = data?.data?.profiles || []
+  } catch (e) {
+    profiles.value = []
+  }
+}
+
 // ─── Phase 03 ────────────────────────────────────────────────────────────────
 
 async function saveConfig() {
   isProcessing.value = true
   phaseError.value[2] = ''
   try {
+    // Map 'Both' → backend expects 'reddit' or 'twitter'; 'Both' triggers parallel mode via start
+    const platformMap = { 'Both': 'reddit', 'Info Plaza': 'reddit', 'Topic Community': 'twitter' }
+    const mappedPlatform = platformMap[simConfig.value.platform] || 'reddit'
+
     const res = await configureSimulation(simulationId.value, {
       duration_hours:  parseInt(simConfig.value.duration),
       max_rounds:      parseInt(simConfig.value.rounds),
       active_start:    simConfig.value.activeStart,
       active_end:      simConfig.value.activeEnd,
       agent_count:     parseInt(simConfig.value.agentCount),
-      platform:        simConfig.value.platform,
+      platform:        mappedPlatform,
       algorithm:       simConfig.value.algorithm,
     })
     if (!res.success) throw new Error(res.error || 'Configure failed')

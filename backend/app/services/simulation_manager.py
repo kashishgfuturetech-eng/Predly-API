@@ -234,7 +234,8 @@ class SimulationManager:
         defined_entity_types: Optional[List[str]] = None,
         use_llm_for_profiles: bool = True,
         progress_callback: Optional[callable] = None,
-        parallel_profile_count: int = 3
+        parallel_profile_count: int = 3,
+        agent_count: Optional[int] = None
     ) -> SimulationState:
         """
         Prepare the simulation environment (fully automated)
@@ -301,7 +302,14 @@ class SimulationManager:
                 return state
             
             # ========== Stage 2: Generate Agent Profiles ==========
-            total_entities = len(filtered.entities)
+            # If agent_count is specified, slice the entity list to that size
+            entities_to_use = filtered.entities
+            if agent_count and agent_count > 0 and agent_count < len(filtered.entities):
+                logger.info(f"agent_count={agent_count} specified, slicing from {len(filtered.entities)} entities")
+                entities_to_use = filtered.entities[:agent_count]
+                state.entities_count = agent_count  # update count to reflect actual agents
+
+            total_entities = len(entities_to_use)
             
             if progress_callback:
                 progress_callback(
@@ -336,7 +344,7 @@ class SimulationManager:
                 realtime_platform = "twitter"
             
             profiles = generator.generate_profiles_from_entities(
-                entities=filtered.entities,
+                entities=entities_to_use,
                 use_llm=use_llm_for_profiles,
                 progress_callback=profile_progress,
                 graph_id=state.graph_id,  # pass graph_id for Zep retrieval

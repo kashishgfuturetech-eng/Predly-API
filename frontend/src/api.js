@@ -124,8 +124,14 @@ export async function createSimulation(projectId) {
   return post('/simulation/create', { project_id: projectId })
 }
 
-export async function prepareSimulation(simulationId, projectId) {
-  return post('/simulation/prepare', { simulation_id: simulationId, project_id: projectId })
+export async function prepareSimulation(simulationId, projectId, options = {}) {
+  return post('/simulation/prepare', {
+    simulation_id: simulationId,
+    project_id: projectId,
+    ...(options.agentCount   ? { agent_count: parseInt(options.agentCount) }             : {}),
+    ...(options.parallelCount ? { parallel_profile_count: parseInt(options.parallelCount) } : {}),
+    ...(options.forceRegenerate ? { force_regenerate: true }                               : {}),
+  })
 }
 
 export async function configureSimulation(simulationId, config) {
