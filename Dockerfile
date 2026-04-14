@@ -25,4 +25,4 @@ RUN cd frontend && VITE_API_BASE_URL=https://predly-api.onrender.com/api npm run
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "cd /app/backend && uv run gunicorn -c gunicorn.conf.py run:application"]
+CMD ["sh", "-c", "cd /app/backend && uv run gunicorn --timeout 600 --graceful-timeout 300 -c gunicorn.conf.py run:application"]
