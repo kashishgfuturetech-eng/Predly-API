@@ -412,9 +412,9 @@ class SimulationRunner:
             #   simulation.log        - Main process log
             
             cmd = [
-                sys.executable,  # Python interpreter
+                "uv", "run", "python",
                 script_path,
-                "--config", config_path,  # Use full config file path
+                "--config", config_path,
             ]
             
             # If max_rounds specified, add to command-line arguments
