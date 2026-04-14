@@ -2121,6 +2121,18 @@ def get_agent_stats(simulation_id: str):
             "traceback": traceback.format_exc()
         }), 500
 
+@simulation_bp.route('/<simulation_id>/debug-log', methods=['GET'])
+def get_debug_log(simulation_id):
+    import os
+    from flask import jsonify
+    sim_dir = os.path.join('/app/backend/uploads/simulations', simulation_id)
+    log_path = os.path.join(sim_dir, 'simulation.log')
+    try:
+        with open(log_path, 'r', encoding='utf-8') as f:
+            content = f.read()[-5000:]  # last 5000 chars
+        return jsonify({'log': content})
+    except Exception as e:
+        return jsonify({'error': str(e)})
 
 # ============== Database Query Endpoints ==============
 
