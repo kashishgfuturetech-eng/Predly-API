@@ -2133,6 +2133,33 @@ def get_debug_log(simulation_id):
         return jsonify({'log': content})
     except Exception as e:
         return jsonify({'error': str(e)})
+    
+@simulation_bp.route('/<simulation_id>/debug-dir', methods=['GET'])
+def get_debug_dir(simulation_id):
+    import os
+    from flask import jsonify
+    
+    # Check multiple possible paths
+    paths_to_check = [
+        '/app/backend/uploads/simulations',
+        '/app/backend/app/uploads/simulations', 
+        '/app/uploads/simulations',
+    ]
+    
+    result = {}
+    for path in paths_to_check:
+        result[path] = {
+            'exists': os.path.exists(path),
+            'contents': os.listdir(path) if os.path.exists(path) else []
+        }
+    
+    # Also check where Config says simulations are stored
+    from ..config import Config
+    result['config_path'] = Config.OASIS_SIMULATION_DATA_DIR
+    result['config_path_exists'] = os.path.exists(Config.OASIS_SIMULATION_DATA_DIR)
+    result['config_path_contents'] = os.listdir(Config.OASIS_SIMULATION_DATA_DIR) if os.path.exists(Config.OASIS_SIMULATION_DATA_DIR) else []
+    
+    return jsonify(result)
 
 # ============== Database Query Endpoints ==============
 
