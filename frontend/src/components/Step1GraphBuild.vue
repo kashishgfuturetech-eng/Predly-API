@@ -281,7 +281,7 @@ async function startBuild() {
 
   try {
     // ── Step A: kick off the build job ──────────────────────────────────────
-    const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10000/api'
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
     const res = await fetch(`${BASE_URL}/graph/build`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -336,7 +336,7 @@ async function startBuild() {
 // Polls GET /api/graph/task/:id and updates the progress bar + status message
 // in real time from the task's message + progress fields
 async function pollTaskWithProgress(taskId, intervalMs = 3000, timeoutMs = 600000) {
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10000/api'
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
   const start = Date.now()
 
   return new Promise((resolve, reject) => {

@@ -1,29 +1,32 @@
 FROM python:3.11
 
-# 安装 Node.js （满足 >=18）及必要工具
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends nodejs npm \
+# Install Node.js 20
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+  && apt-get install -y nodejs \
   && rm -rf /var/lib/apt/lists/*
 
-# 从 uv 官方镜像复制 uv
+# Copy uv package manager
 COPY --from=ghcr.io/astral-sh/uv:0.9.26 /uv /uvx /bin/
 
 WORKDIR /app
 
-# 先复制依赖描述文件以利用缓存
+# Copy dependency files first (for Docker cache)
 COPY package.json package-lock.json ./
 COPY frontend/package.json frontend/package-lock.json ./frontend/
 COPY backend/pyproject.toml backend/uv.lock ./backend/
 
-# 安装依赖（Node + Python）
+# Install all dependencies
 RUN npm ci \
   && npm ci --prefix frontend \
   && cd backend && uv sync --frozen
 
-# 复制项目源码
+# Copy all source code
 COPY . .
 
-EXPOSE 3000 5001
+# Build the Vue frontend (bakes in the API URL at build time)
+RUN cd frontend && VITE_API_BASE_URL=https://predly-api.onrender.com/api npm run build
 
-# 同时启动前后端（开发模式）
-CMD ["npm", "run", "dev"]
+EXPOSE 10000
+
+# Start only the Python backend (it will also serve the built frontend)
+CMD cd backend && uv run gunicorn -c gunicorn.conf.py run:application

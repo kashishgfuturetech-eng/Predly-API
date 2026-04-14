@@ -71,6 +71,18 @@ def create_app(config_class=Config):
     app.register_blueprint(simulation_bp, url_prefix='/api/simulation')
     app.register_blueprint(report_bp, url_prefix='/api/report')
 
+    # Serve the built Vue frontend
+    import os as _os
+    _frontend_dist = _os.path.join(_os.path.dirname(__file__), '../../frontend/dist')
+
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve_frontend(path):
+        from flask import send_from_directory
+        if path and _os.path.exists(_os.path.join(_frontend_dist, path)):
+            return send_from_directory(_frontend_dist, path)
+        return send_from_directory(_frontend_dist, 'index.html')
+
     @app.route('/')
     def health():
         return {'status': 'ok', 'service': 'Predly Backend'}

@@ -38,7 +38,7 @@ class Config:
     LLM_API_KEY = os.environ.get('LLM_API_KEY_1') or os.environ.get('LLM_API_KEY')
 
     # ===== Boost LLM (Gemini) - 3 keys, auto-rotates on rate limit =====
-    LLM_BOOST_API_KEY_1 = os.environ.get('LLM_BOOST_API_KEY_1')
+    LLM_BOOST_API_KEY_1 = os.environ.get('LLM_BOOST_API_KEY')
     LLM_BOOST_API_KEY_2 = os.environ.get('LLM_BOOST_API_KEY_2')
     LLM_BOOST_API_KEY_3 = os.environ.get('LLM_BOOST_API_KEY_3')
     LLM_BOOST_BASE_URL = os.environ.get('LLM_BOOST_BASE_URL')
