@@ -236,6 +236,7 @@ import { ref, computed, onUnmounted, nextTick } from 'vue'
 const props = defineProps({
   simulationId: String,
   projectId: String,
+  maxRounds: { type: Number, default: 100 },
 })
 const emit = defineEmits(['completed'])
 
@@ -243,7 +244,7 @@ const emit = defineEmits(['completed'])
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10000/api'
 const API = (path) => `${BASE_URL}${path}`
 
-const maxRounds = ref(100)
+const maxRounds = ref(props.maxRounds)
 const isStarting = ref(false)
 const isRunning = ref(false)
 const isCompleted = ref(false)

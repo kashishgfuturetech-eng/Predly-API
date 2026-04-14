@@ -274,7 +274,7 @@
           <span class="material-symbols-outlined" style="font-size:14px">check_circle</span>
           Env Setup Complete — {{ profiles.length }} agents ready
         </div>
-        <button class="btn-primary" @click="$emit('completed', { simulation_id: simulationId })">
+        <button class="btn-primary" @click="$emit('completed', { simulation_id: simulationId, max_rounds: parseInt(simConfig.rounds) })">
           Launch Simulation
           <span class="material-symbols-outlined" style="font-size:18px">rocket_launch</span>
         </button>

@@ -43,6 +43,7 @@
           v-else-if="currentStep === 'simulation'"
           :simulation-id="projectData.simulation_id || null"
           :project-id="projectData.project_id"
+          :max-rounds="projectData.max_rounds"
           @completed="onStepCompleted('simulation', {})"
         />
 
@@ -120,6 +121,7 @@ const projectData = ref({
   simulation_id: null,
   report_id:     null,
   ontology:      null,
+  max_rounds:    100,
 })
 
 const stepOrder = ['graph', 'env', 'simulation', 'report', 'interaction']  // ← added 'interaction'
