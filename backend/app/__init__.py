@@ -72,12 +72,12 @@ def create_app(config_class=Config):
     app.register_blueprint(simulation_bp, url_prefix='/api/simulation')
     app.register_blueprint(report_bp, url_prefix='/api/report')
     
-    # Health check endpoint
-    @app.route('/')
+    # Health check
+    @app.route('/api/health')
     def health():
         return {'status': 'ok', 'service': 'Predly Backend'}
 
-    # Serve Vue frontend static build (production)
+    # Serve Vue frontend (production build)
     import os as _os
     from flask import send_from_directory as _sfd
     _dist = _os.path.join(_os.path.dirname(__file__), '../../frontend/dist')
