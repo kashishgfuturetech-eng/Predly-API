@@ -241,7 +241,7 @@
             <span class="label-sm" style="color:var(--text-muted)">{{ profiles.length }} of {{ simConfig.agentCount }} requested · from {{ totalEntities }} available</span>
           </div>
           <div class="env-setup__profiles-grid">
-            <div v-for="p in profiles.slice(0, 6)" :key="p.user_id" class="env-setup__profile-card card-nested">
+            <div v-for="p in (showAllAgents ? profiles : profiles.slice(0, 6))" :key="p.user_id" class="env-setup__profile-card card-nested">
               <div class="env-setup__profile-avatar">{{ (p.name || p.username || '?').charAt(0).toUpperCase() }}</div>
               <div class="env-setup__profile-info">
                 <div class="env-setup__profile-name">{{ p.name || p.username }}</div>
@@ -249,9 +249,15 @@
               </div>
             </div>
           </div>
-          <button v-if="profiles.length > 6" class="btn-ghost" style="font-size:.75rem;margin-top:.5rem">
-            +{{ profiles.length - 6 }} more agents
-            <span class="material-symbols-outlined" style="font-size:14px">expand_more</span>
+          <button v-if="profiles.length > 6" @click="showAllAgents = !showAllAgents" class="btn-ghost" style="font-size:.75rem;margin-top:.5rem">
+            <template v-if="!showAllAgents">
+              +{{ profiles.length - 6 }} more agents
+              <span class="material-symbols-outlined" style="font-size:14px">expand_more</span>
+            </template>
+            <template v-else>
+              Show fewer
+              <span class="material-symbols-outlined" style="font-size:14px">expand_less</span>
+            </template>
           </button>
         </div>
       </div>
@@ -303,6 +309,7 @@ const phaseError   = ref({ 0: '', 1: '', 2: '' })
 
 const entityPreview = ref([])
 const totalEntities = ref(0)
+const showAllAgents = ref(false)
 
 const simConfig = ref({
   duration:    '72',
