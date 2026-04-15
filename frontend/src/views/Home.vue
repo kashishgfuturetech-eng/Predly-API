@@ -1,228 +1,122 @@
 <template>
-  <div class="home">
-    <!-- Background orbs -->
-    <div class="orb orb-orange" style="width:600px;height:600px;top:-200px;right:-100px;opacity:0.6;"></div>
-    <div class="orb orb-blue" style="width:500px;height:500px;bottom:-150px;left:-100px;opacity:0.5;"></div>
+  <div class="landing">
+    <!-- Background grid -->
+    <div class="landing__grid-bg"></div>
+    <!-- Orbs -->
+    <div class="landing__orb landing__orb--orange"></div>
+    <div class="landing__orb landing__orb--blue"></div>
+    <div class="landing__orb landing__orb--center"></div>
 
-    <!-- Nav -->
-    <TopNav />
+    <!-- Top bar -->
+    <header class="landing__topbar">
+      <div class="landing__topbar-inner">
+        <div class="landing__logo font-headline">
+          <span class="landing__logo-dot"></span>Predly
+        </div>
+        <div class="landing__status-badge">
+          <span class="landing__status-dot"></span>
+          <span class="font-mono" style="font-size:0.6875rem;letter-spacing:0.1em;color:var(--text-muted)">ENGINE STATUS: V2.4 ACTIVE</span>
+        </div>
+      </div>
+    </header>
 
-    <main class="home__main">
-      <!-- ── Hero Section ── -->
-      <section class="home__hero">
-        <div class="home__hero-left">
-          <div class="home__tag-row animate-fade-up" style="animation-delay:0ms">
-            <span class="chip chip-orange">Offline Multi-Agent Simulation Engine</span>
-            <span class="home__version label-sm">/ v0.1-preview</span>
-          </div>
+    <!-- Hero -->
+    <main class="landing__main">
+      <section class="landing__hero">
 
-          <h1 class="home__headline display-lg animate-fade-up" style="animation-delay:80ms">
-            Upload Any Document<br>
-            <span class="home__headline-accent">Predict What Happens Next</span>
-          </h1>
-
-          <p class="home__desc animate-fade-up" style="animation-delay:160ms">
-            From a single document, <strong class="home__strong">Predly</strong> extracts
-            reality seeds and builds a parallel world of
-            <span class="home__accent">autonomous AI agents</span> — running entirely on your machine.
-            Inject variables, observe emergent behavior, and find
-            <code class="home__code">"local optima"</code> in complex social dynamics.
-          </p>
-
-          <div class="home__slogan animate-fade-up" style="animation-delay:200ms">
-            Your data never leaves your machine. The future is simulated locally<span class="home__cursor">_</span>
-          </div>
-
-          <div class="home__cta-row animate-fade-up" style="animation-delay:240ms">
-            <button class="btn-primary home__cta-btn" @click="scrollToConsole">
-              <span class="material-symbols-outlined" style="font-size:18px">rocket_launch</span>
-              Start Engine
-            </button>
-            <a
-              href="https://github.com/nikmcfly/Predly"
-              target="_blank"
-              class="btn-secondary"
-            >
-              <span class="material-symbols-outlined" style="font-size:16px">open_in_new</span>
-              View Github
-            </a>
-          </div>
+        <div class="landing__engine-tag animate-fade-up" style="animation-delay:0ms">
+          <span class="landing__engine-dot"></span>
+          <span class="font-mono" style="font-size:0.6875rem;letter-spacing:0.12em">ENGINE STATUS: V2.4 ACTIVE</span>
         </div>
 
-        <div class="home__hero-right animate-fade-up" style="animation-delay:120ms">
-          <!-- Stats cluster -->
-          <div class="home__stat-cluster">
-            <div class="home__stat-card card">
-              <div class="home__stat-orb orb-blue" style="width:80px;height:80px;top:-20px;right:-20px;opacity:0.5;"></div>
-              <span class="label-sm" style="color:var(--text-muted)">Mode</span>
-              <div class="home__stat-value font-headline">Free</div>
-              <div class="home__stat-label">Runs on your hardware</div>
+        <h1 class="landing__headline animate-fade-up" style="animation-delay:80ms">Predly</h1>
+        <h2 class="landing__subheadline animate-fade-up" style="animation-delay:140ms">Predict What Happens Next.</h2>
+
+        <p class="landing__desc animate-fade-up" style="animation-delay:200ms">
+          Architectural Multi-Agent Systems designed for predictive logic and local context simulation.
+        </p>
+
+        <!-- Drop Zone -->
+        <div
+          class="landing__dropzone animate-fade-up"
+          style="animation-delay:280ms"
+          @dragover.prevent="dragging = true"
+          @dragleave="dragging = false"
+          @drop.prevent="handleDrop"
+          @click="triggerFileInput"
+          :class="{ 'landing__dropzone--drag': dragging, 'landing__dropzone--filled': files.length }"
+        >
+          <input ref="fileInput" type="file" multiple accept=".pdf,.md,.txt,.json,.xlsx" style="display:none" @change="handleFileSelect" />
+
+          <div v-if="!files.length" class="landing__drop-empty">
+            <div class="landing__drop-icon">
+              <span class="material-symbols-outlined" style="font-size:26px">upload_file</span>
             </div>
-            <div class="home__stat-card card">
-              <div class="home__stat-orb orb-orange" style="width:80px;height:80px;top:-20px;right:-20px;opacity:0.5;"></div>
-              <span class="label-sm" style="color:var(--text-muted)">Privacy</span>
-              <div class="home__stat-value font-headline">Private</div>
-              <div class="home__stat-label">100% offline, no cloud</div>
-            </div>
-            <div class="home__stat-card home__stat-card--wide card">
-              <span class="label-sm" style="color:var(--text-muted)">System Status</span>
-              <div style="display:flex;align-items:center;gap:.625rem;margin-top:.375rem">
-                <span class="home__status-dot"></span>
-                <div class="home__stat-value font-headline" style="font-size:1.25rem">Ready</div>
-              </div>
-              <div class="home__stat-label">Local prediction engine on standby</div>
+            <div class="landing__drop-title">Drop Reality Seeds</div>
+            <div class="landing__drop-hint">PDF, MD, i Xi , or JSON sources for local context extraction</div>
+            <div class="landing__drop-tags">
+              <span class="landing__drop-tag font-mono">context.pdf</span>
+              <span class="landing__drop-tag font-mono">logic_branch.json</span>
+              <span class="landing__drop-tag font-mono">manifesto.md</span>
             </div>
           </div>
 
-          <!-- Workflow steps -->
-          <div class="home__steps card">
-            <div class="home__steps-header label-sm" style="color:var(--text-muted)">
-              <span style="color:var(--primary)">◇</span> Workflow Sequence
+          <div v-else class="landing__file-list">
+            <div v-for="(f, i) in files" :key="i" class="landing__file-item">
+              <span class="material-symbols-outlined" style="font-size:14px;color:var(--secondary)">description</span>
+              <span class="landing__file-name font-mono">{{ f.name }}</span>
+              <span class="landing__file-size">{{ formatSize(f.size) }}</span>
+              <button class="landing__file-remove" @click.stop="removeFile(i)">
+                <span class="material-symbols-outlined" style="font-size:14px">close</span>
+              </button>
             </div>
-            <div class="home__steps-list">
-              <div
-                v-for="(step, i) in workflowSteps"
-                :key="i"
-                class="home__step"
-                :style="`animation-delay:${(i + 5) * 60}ms`"
-              >
-                <span class="home__step-num font-mono">{{ step.num }}</span>
-                <div class="home__step-body">
-                  <div class="home__step-title">{{ step.title }}</div>
-                  <div class="home__step-desc">{{ step.desc }}</div>
-                </div>
-                <span class="home__step-arrow material-symbols-outlined">arrow_forward</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ── Console Section ── -->
-      <section class="home__console" ref="consoleRef">
-        <div class="home__console-header">
-          <div class="step-tag">01 / Reality Seeds</div>
-          <span class="label-sm" style="color:var(--text-muted)">Supported: PDF, MD, TXT</span>
-        </div>
-
-        <div class="home__console-grid">
-          <!-- Upload Zone -->
-          <div
-            class="home__upload-zone card"
-            @dragover.prevent="dragging = true"
-            @dragleave="dragging = false"
-            @drop.prevent="handleDrop"
-            @click="triggerFileInput"
-            :class="{ 'home__upload-zone--drag': dragging, 'home__upload-zone--filled': files.length }"
-          >
-            <input ref="fileInput" type="file" multiple accept=".pdf,.md,.txt" style="display:none" @change="handleFileSelect" />
-
-            <div v-if="!files.length" class="home__upload-placeholder">
-              <div class="home__upload-icon">
-                <span class="material-symbols-outlined" style="font-size:32px;color:var(--text-muted)">cloud_upload</span>
-              </div>
-              <div class="home__upload-title">Drop reality seeds here</div>
-              <div class="label-sm" style="color:var(--text-muted)">PDF, MD, TXT — your local data stays local</div>
-            </div>
-
-            <div v-else class="home__file-list">
-              <div v-for="(f, i) in files" :key="i" class="home__file-item">
-                <span class="material-symbols-outlined" style="font-size:16px;color:var(--secondary)">description</span>
-                <span class="home__file-name font-mono">{{ f.name }}</span>
-                <span class="home__file-size label-sm">{{ formatSize(f.size) }}</span>
-                <button class="home__file-remove" @click.stop="removeFile(i)">
-                  <span class="material-symbols-outlined" style="font-size:16px">close</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Input + CTA -->
-          <div class="home__input-side">
-            <div class="home__divider-label label-sm">02 / Context Prompt</div>
-            <div class="home__textarea-wrap">
-              <textarea
-                v-model="prompt"
-                class="input-field home__textarea"
-                rows="5"
-                placeholder="Describe your simulation goal, target audience, or specific dynamics to observe…"
-                :disabled="isLoading"
-              ></textarea>
-              <span class="home__model-badge font-mono label-sm">gemma3:4b · local</span>
-            </div>
-
-            <!-- Log stream — shows live progress messages -->
-            <div v-if="isLoading && logLines.length" class="home__log">
-              <div class="home__log-header label-sm">
-                <span class="home__log-dot"></span>
-                Engine Log
-              </div>
-              <div class="home__log-body" ref="logBody">
-                <div v-for="(line, i) in logLines" :key="i" class="home__log-line font-mono">
-                  <span class="home__log-ts">{{ line.ts }}</span>
-                  <span :class="line.type === 'error' ? 'home__log-err' : ''">{{ line.msg }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Error message -->
-            <div v-if="errorMsg" class="home__error">
-              <span class="material-symbols-outlined" style="font-size:16px">error</span>
-              {{ errorMsg }}
-            </div>
-
-            <button
-              class="home__start-btn btn-primary"
-              :disabled="!canStart || isLoading"
-              @click="startEngine"
-            >
-              <span v-if="isLoading" class="home__loading-row">
-                <span class="home__spinner"></span>
-                {{ loadingMsg }}
-              </span>
-              <span v-else>START ENGINE</span>
-              <span v-if="!isLoading" class="material-symbols-outlined" style="font-size:20px">arrow_forward</span>
+            <button class="landing__add-more" @click.stop="triggerFileInput">
+              <span class="material-symbols-outlined" style="font-size:13px">add</span> Add more files
             </button>
           </div>
         </div>
+
+        <!-- Error -->
+        <div v-if="errorMsg" class="landing__error animate-fade-up">
+          <span class="material-symbols-outlined" style="font-size:14px">error_outline</span>
+          {{ errorMsg }}
+        </div>
+
+        <!-- CTA -->
+        <button
+          class="landing__cta animate-fade-up"
+          style="animation-delay:360ms"
+          :disabled="!canStart || isLoading"
+          @click="goToPrompt"
+        >
+          <span v-if="isLoading" class="landing__cta-row">
+            <span class="landing__spinner"></span>{{ loadingMsg }}
+          </span>
+          <span v-else class="landing__cta-row">
+            Start Predicting
+            <span class="material-symbols-outlined" style="font-size:18px">bolt</span>
+          </span>
+        </button>
+
       </section>
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import TopNav from '../components/TopNav.vue'
-import { uploadProject } from '../api.js'
 
 const router = useRouter()
-const consoleRef = ref(null)
 const fileInput = ref(null)
-const logBody = ref(null)
 
 const files = ref([])
-const prompt = ref('')
 const dragging = ref(false)
 const isLoading = ref(false)
-// ✅ FIX: single errorMsg ref used everywhere (was split between error + errorMsg)
 const errorMsg = ref('')
-const loadingMsg = ref('Uploading files…')
-const logLines = ref([])
+const loadingMsg = ref('Processing…')
 
-const canStart = computed(() => files.value.length > 0 || prompt.value.trim().length > 10)
-
-const workflowSteps = [
-  { num: '01', title: 'Graph Build',  desc: 'Extract ontology & knowledge graph from reality seeds' },
-  { num: '02', title: 'Env Setup',    desc: 'Configure simulation parameters & agent personas' },
-  { num: '03', title: 'Simulation',   desc: 'Run parallel autonomous agent interactions' },
-  { num: '04', title: 'Report',       desc: 'AI-generated predictive intelligence report' },
-  { num: '05', title: 'Interaction',  desc: 'Query the simulated world with your own prompts' },
-]
-
-function scrollToConsole() {
-  consoleRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
+const canStart = computed(() => files.value.length > 0)
 
 function triggerFileInput() {
   if (!isLoading.value) fileInput.value?.click()
@@ -236,7 +130,7 @@ function handleDrop(e) {
   if (isLoading.value) return
   dragging.value = false
   const dropped = Array.from(e.dataTransfer.files).filter(f =>
-    ['.pdf', '.md', '.txt'].some(ext => f.name.toLowerCase().endsWith(ext))
+    ['.pdf', '.md', '.txt', '.json', '.xlsx'].some(ext => f.name.toLowerCase().endsWith(ext))
   )
   files.value = [...files.value, ...dropped]
 }
@@ -251,301 +145,277 @@ function formatSize(bytes) {
   return `${(bytes / 1048576).toFixed(1)}MB`
 }
 
-function addLog(msg, type = 'info') {
-  const now = new Date()
-  const ts = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`
-  logLines.value.push({ ts, msg, type })
-  // auto-scroll log to bottom
-  nextTick(() => {
-    if (logBody.value) logBody.value.scrollTop = logBody.value.scrollHeight
-  })
-}
-
-async function startEngine() {
+function goToPrompt() {
   if (!canStart.value || isLoading.value) return
-
-  isLoading.value = true
-  errorMsg.value = ''
-  logLines.value = []
-
-  try {
-    // ── Stage 1: Upload + Ontology ──────────────────────────────────────────
-    loadingMsg.value = 'Uploading files…'
-    addLog(`Uploading ${files.value.length} file(s)…`)
-
-    const uploadResult = await uploadProject(files.value, prompt.value)
-
-    if (!uploadResult.success) throw new Error(uploadResult.error || 'Upload failed')
-
-    const projectId = uploadResult.data?.project_id
-    if (!projectId) throw new Error('Backend did not return a project_id')
-
-    addLog(`Project created — ID: ${projectId}`)
-
-    // ── Stage 2: Ontology complete — navigate to Graph Build ────────────────
-    loadingMsg.value = 'Ontology generated — loading workspace…'
-    addLog('Ontology generation complete ✓')
-    addLog('Redirecting to Graph Build…')
-
-    // ✅ FIX: route is /main/:projectId not /process/:projectId
-    await router.push({ name: 'Main', params: { projectId } })
-
-  } catch (e) {
-    errorMsg.value = e.message
-    addLog(e.message, 'error')
-  } finally {
-    isLoading.value = false
-    loadingMsg.value = 'Uploading files…'
-  }
+  // Store files globally so PromptView can access them
+  window.__predlyPendingFiles = files.value
+  router.push({ name: 'Prompt' })
 }
 </script>
 
 <style scoped>
-.home {
+.landing {
   min-height: 100vh;
-  background: var(--surface);
-  position: relative;
-  overflow-x: hidden;
-}
-
-.home__main {
-  max-width: 1360px;
-  margin: 0 auto;
-  padding: 100px 2.5rem 4rem;
+  background: #0a0c0f;
   display: flex;
   flex-direction: column;
-  gap: 5rem;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
 }
 
-/* ── Hero ── */
-.home__hero {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: start;
+/* Grid background */
+.landing__grid-bg {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 181, 158, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 181, 158, 0.025) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
 }
 
-.home__tag-row {
+/* Orbs */
+.landing__orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+}
+.landing__orb--orange {
+  width: 700px; height: 700px;
+  top: -280px; right: -180px;
+  background: radial-gradient(circle, rgba(255, 90, 31, 0.35) 0%, transparent 70%);
+}
+.landing__orb--blue {
+  width: 600px; height: 600px;
+  bottom: -180px; left: -180px;
+  background: radial-gradient(circle, rgba(14, 63, 174, 0.3) 0%, transparent 70%);
+}
+.landing__orb--center {
+  width: 500px; height: 500px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255, 181, 158, 0.04) 0%, transparent 70%);
+}
+
+/* Top bar */
+.landing__topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 1.125rem 2rem;
+}
+.landing__topbar-inner {
+  max-width: 960px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  justify-content: space-between;
 }
-
-.home__version { color: var(--text-muted); }
-
-.home__headline {
+.landing__logo {
+  font-size: 1.125rem;
+  font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
-
-.home__headline-accent {
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.home__desc {
-  color: var(--text-secondary);
-  font-size: 1rem;
-  line-height: 1.85;
-  max-width: 560px;
-  margin-bottom: 1.5rem;
-}
-
-.home__strong { color: var(--text-primary); font-weight: 700; }
-.home__accent { color: var(--primary); font-weight: 600; }
-
-.home__code {
-  background: var(--surface-container-high);
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-family: var(--font-mono);
-  font-size: 0.875em;
-  color: var(--secondary);
-  border: 1px solid var(--ghost-border);
-}
-
-.home__slogan {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  border-left: 3px solid var(--primary-container);
-  padding-left: 1rem;
-  margin-bottom: 2rem;
-  line-height: 1.6;
-}
-
-.home__cursor {
-  color: var(--primary);
-  animation: blink 1s step-end infinite;
-  font-weight: 700;
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-.home__cta-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-
-.home__cta-btn {
-  padding: 0.75rem 1.75rem;
-  font-size: 0.875rem;
-  box-shadow: var(--shadow-glow-primary);
-}
-
-/* ── Hero Right ── */
-.home__hero-right { display: flex; flex-direction: column; gap: 1.25rem; }
-
-.home__stat-cluster {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-
-.home__stat-card { padding: 1.25rem; overflow: hidden; }
-.home__stat-card--wide { grid-column: span 2; }
-
-.home__stat-orb {
-  position: absolute;
+.landing__logo-dot {
+  width: 6px; height: 6px;
   border-radius: 50%;
-  filter: blur(30px);
-  pointer-events: none;
+  background: var(--primary-container);
 }
-
-.home__stat-value {
-  font-size: 1.625rem;
-  font-weight: 700;
-  color: var(--primary);
-  line-height: 1.2;
-  margin: 0.25rem 0 0.125rem;
+.landing__status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(16, 20, 25, 0.85);
+  border: 1px solid rgba(171, 137, 127, 0.18);
+  border-radius: 999px;
+  padding: 0.375rem 0.875rem;
+  backdrop-filter: blur(10px);
 }
-
-.home__stat-label { font-size: 0.75rem; color: var(--text-muted); }
-
-.home__status-dot {
-  width: 8px;
-  height: 8px;
+.landing__status-dot {
+  width: 6px; height: 6px;
   border-radius: 50%;
   background: #86EFAC;
-  box-shadow: 0 0 8px #86EFAC;
-  animation: status-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 6px #86EFAC;
+  animation: pulse-g 2s ease-in-out infinite;
 }
-@keyframes status-pulse {
+@keyframes pulse-g {
   0%,100% { box-shadow: 0 0 4px #86EFAC; }
   50%      { box-shadow: 0 0 12px #86EFAC; }
 }
 
-/* ── Steps Panel ── */
-.home__steps { padding: 1.25rem; }
-
-.home__steps-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  letter-spacing: 0.08em;
-}
-
-.home__steps-list { display: flex; flex-direction: column; gap: 0.25rem; }
-
-.home__step {
-  display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: var(--radius-md);
-  transition: background var(--duration-fast);
-  cursor: default;
-  animation: slide-right 400ms var(--ease-out) both;
-}
-.home__step:hover { background: var(--surface-container-high); }
-.home__step:hover .home__step-arrow { opacity: 1; transform: translateX(0); }
-
-.home__step-num { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); min-width: 24px; }
-.home__step-body { flex: 1; }
-.home__step-title { font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
-.home__step-desc { font-size: 0.6875rem; color: var(--text-muted); margin-top: 1px; }
-
-.home__step-arrow {
-  font-size: 14px;
-  color: var(--primary);
-  opacity: 0;
-  transform: translateX(-4px);
-  transition: opacity var(--duration-fast), transform var(--duration-fast);
-}
-
-/* ── Console Section ── */
-.home__console {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  padding-top: 3rem;
-  border-top: 1px solid var(--ghost-border);
-}
-
-.home__console-header { display: flex; align-items: center; justify-content: space-between; }
-
-.home__console-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
-  align-items: start;
-}
-
-/* Upload Zone */
-.home__upload-zone {
-  min-height: 220px;
+/* Main */
+.landing__main {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  border: 1px dashed rgba(171, 137, 127, 0.2);
-  transition: border-color var(--duration-fast), background var(--duration-fast);
-  padding: 1.5rem;
-}
-.home__upload-zone:hover,
-.home__upload-zone--drag {
-  border-color: var(--primary);
-  background: rgba(255, 181, 158, 0.04);
-}
-.home__upload-zone--filled {
-  align-items: flex-start;
-  border-style: solid;
+  padding: 6rem 1.5rem 4rem;
+  position: relative;
+  z-index: 1;
+  width: 100%;
 }
 
-.home__upload-placeholder {
+/* Hero */
+.landing__hero {
+  max-width: 620px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
+  gap: 1.25rem;
+}
+
+/* Engine tag */
+.landing__engine-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(16, 20, 25, 0.9);
+  border: 1px solid rgba(171, 137, 127, 0.22);
+  border-radius: 999px;
+  padding: 0.375rem 0.875rem;
+  color: var(--text-muted);
+  backdrop-filter: blur(8px);
+}
+.landing__engine-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--primary-container);
+  box-shadow: 0 0 6px var(--primary-container);
+}
+
+/* Headline */
+.landing__headline {
+  font-family: var(--font-headline);
+  font-size: clamp(4.5rem, 12vw, 7rem);
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin: 0;
+  text-shadow: 0 0 100px rgba(255, 181, 158, 0.12);
+}
+.landing__subheadline {
+  font-family: var(--font-headline);
+  font-size: clamp(1.625rem, 4vw, 2.375rem);
+  font-weight: 700;
+  background: linear-gradient(135deg, #FFB59E 0%, #FF5A1F 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+  line-height: 1.2;
+}
+.landing__desc {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  max-width: 460px;
+  margin: 0;
+}
+
+/* Drop zone */
+.landing__dropzone {
+  width: 100%;
+  background: rgba(16, 20, 25, 0.55);
+  border: 1.5px dashed rgba(171, 137, 127, 0.22);
+  border-radius: var(--radius-xl);
+  padding: 2.5rem 2rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(14px);
+  min-height: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.landing__dropzone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(255, 90, 31, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+}
+.landing__dropzone:hover,
+.landing__dropzone--drag {
+  border-color: rgba(255, 90, 31, 0.45);
+  background: rgba(255, 90, 31, 0.03);
+  box-shadow: 0 0 40px rgba(255, 90, 31, 0.07);
+}
+.landing__dropzone--filled {
+  align-items: flex-start;
+  border-style: solid;
+  border-color: rgba(171, 137, 127, 0.18);
+  padding: 1.25rem 1.5rem;
+}
+
+.landing__drop-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
 }
-
-.home__upload-icon {
-  width: 56px;
-  height: 56px;
+.landing__drop-icon {
+  width: 52px; height: 52px;
   border-radius: var(--radius-lg);
-  background: var(--surface-container-high);
-  border: 1px solid var(--ghost-border);
+  background: rgba(255, 90, 31, 0.1);
+  border: 1px solid rgba(255, 90, 31, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--primary-container);
+}
+.landing__drop-title {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+}
+.landing__drop-hint {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.landing__drop-tags {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.25rem;
+}
+.landing__drop-tag {
+  font-size: 0.6875rem;
+  color: rgba(154, 164, 178, 0.6);
+  border: 1px solid rgba(171, 137, 127, 0.18);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.625rem;
+  background: rgba(255,255,255,0.02);
 }
 
-.home__upload-title { font-weight: 600; font-size: 0.9375rem; color: var(--text-primary); }
-
-.home__file-list { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
-
-.home__file-item {
+.landing__file-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.landing__file-item {
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  padding: 0.625rem 0.75rem;
-  background: var(--surface-container-high);
+  padding: 0.5rem 0.75rem;
+  background: rgba(255,255,255,0.03);
   border-radius: var(--radius-md);
-  border: 1px solid var(--ghost-border);
+  border: 1px solid rgba(171,137,127,0.1);
 }
-
-.home__file-name {
+.landing__file-name {
   flex: 1;
   font-size: 0.8125rem;
   color: var(--text-primary);
@@ -553,150 +423,106 @@ async function startEngine() {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-.home__file-size { color: var(--text-muted); font-size: 0.6875rem; flex-shrink: 0; }
-
-.home__file-remove {
+.landing__file-size {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+.landing__file-remove {
   background: none;
   border: none;
   cursor: pointer;
   color: var(--text-muted);
   padding: 0.125rem;
+  display: flex;
+  align-items: center;
   border-radius: var(--radius-sm);
+  transition: color 0.15s;
+}
+.landing__file-remove:hover { color: #f87171; }
+.landing__add-more {
   display: flex;
   align-items: center;
-  transition: color var(--duration-fast);
-}
-.home__file-remove:hover { color: var(--error); }
-
-/* Input Side */
-.home__input-side { display: flex; flex-direction: column; gap: 1rem; }
-
-.home__divider-label {
+  gap: 0.375rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
-  letter-spacing: 0.08em;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--ghost-border);
-}
-
-.home__textarea-wrap { position: relative; }
-
-.home__textarea {
-  resize: vertical;
-  min-height: 140px;
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  line-height: 1.65;
-}
-
-.home__model-badge {
-  position: absolute;
-  bottom: 0.75rem;
-  right: 1rem;
-  color: var(--text-muted);
-  font-size: 0.6875rem;
-  pointer-events: none;
-}
-
-/* ── Log Stream ── */
-.home__log {
-  background: var(--surface-container-lowest);
-  border: 1px solid var(--ghost-border);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.375rem 0.75rem;
   border-radius: var(--radius-md);
-  overflow: hidden;
+  transition: color 0.15s;
 }
+.landing__add-more:hover { color: var(--primary); }
 
-.home__log-header {
+/* CTA */
+.landing__cta {
+  width: 100%;
+  padding: 1rem 1.75rem;
+  background: linear-gradient(135deg, #FF5A1F 0%, #FF8C5A 100%);
+  border: none;
+  border-radius: var(--radius-lg);
+  color: white;
+  font-family: var(--font-headline);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px rgba(255, 90, 31, 0.35);
+  letter-spacing: 0.01em;
+}
+.landing__cta:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 30px rgba(255, 90, 31, 0.45);
+}
+.landing__cta:disabled {
+  background: var(--surface-container-high);
+  color: var(--text-muted);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.landing__cta-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.875rem;
-  background: var(--surface-container);
-  border-bottom: 1px solid var(--ghost-border);
-  color: var(--text-muted);
-  letter-spacing: 0.08em;
 }
-
-.home__log-dot {
-  width: 6px;
-  height: 6px;
+.landing__spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
   border-radius: 50%;
-  background: var(--primary);
-  animation: status-pulse 1s ease-in-out infinite;
+  animation: spin 0.7s linear infinite;
 }
-
-.home__log-body {
-  max-height: 120px;
-  overflow-y: auto;
-  padding: 0.625rem 0.875rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.home__log-line {
-  display: flex;
-  gap: 0.75rem;
-  font-size: 0.6875rem;
-  line-height: 1.5;
-  color: var(--text-secondary);
-}
-
-.home__log-ts {
-  color: var(--text-muted);
-  flex-shrink: 0;
-  opacity: 0.6;
-}
-
-.home__log-err { color: #f87171; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Error */
-.home__error {
+.landing__error {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: rgba(239, 68, 68, 0.08);
+  background: rgba(239, 68, 68, 0.07);
   border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: var(--radius-md);
   color: #f87171;
   font-size: 0.8125rem;
 }
 
-/* Loading */
-.home__loading-row { display: flex; align-items: center; gap: 0.625rem; }
-
-.home__spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  flex-shrink: 0;
+/* Animations */
+.animate-fade-up {
+  animation: fadeUp 0.55s cubic-bezier(0.4,0,0.2,1) both;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.home__start-btn {
-  width: 100%;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  font-size: 0.875rem;
-  letter-spacing: 0.05em;
-  box-shadow: var(--shadow-glow-primary);
-  transition: all var(--duration-normal) var(--ease-out);
-}
-.home__start-btn:disabled {
-  background: var(--surface-container-high);
-  color: var(--text-muted);
-  cursor: not-allowed;
-  box-shadow: none;
-  filter: none;
-  transform: none;
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 1024px) {
-  .home__hero { grid-template-columns: 1fr; }
-  .home__console-grid { grid-template-columns: 1fr; }
+@media (max-width: 600px) {
+  .landing__headline { font-size: 3.5rem; }
+  .landing__subheadline { font-size: 1.4rem; }
+  .landing__drop-tags { display: none; }
 }
 </style>

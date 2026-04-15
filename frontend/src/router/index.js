@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
+import PromptView from '../views/PromptView.vue'
 import MainView from '../views/MainView.vue'
 
 const routes = [
@@ -9,7 +10,13 @@ const routes = [
     component: Home,
   },
   {
-    // ✅ Must match router.push({ name: 'Main', params: { projectId } }) in Home.vue
+    // Intermediate prompt page — user lands here after uploading files on Home
+    path: '/prompt',
+    name: 'Prompt',
+    component: PromptView,
+  },
+  {
+    // ✅ Must match router.push({ name: 'Main', params: { projectId } }) in PromptView.vue
     path: '/main/:projectId',
     name: 'Main',
     component: MainView,
