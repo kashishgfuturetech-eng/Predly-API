@@ -14,7 +14,7 @@ RUN cd backend && uv sync --frozen
 
 # Frontend: install + build (run from INSIDE frontend dir, not --prefix)
 COPY frontend/ ./frontend/
-RUN cd frontend && npm ci && VITE_API_BASE_URL="" npm run build
+RUN cd frontend && npm ci && VITE_API_BASE_URL="/api" npm run build
 
 # Verify dist was created
 RUN ls -la /app/frontend/dist && echo "✅ frontend/dist OK"
