@@ -4,6 +4,7 @@ Predly Backend - Flask Application Factory
 
 import os
 import warnings
+from flask import send_from_directory
 
 # Suppress multiprocessing resource_tracker warnings (from third-party libs like transformers)
 # Must be set before all other imports
@@ -71,12 +72,22 @@ def create_app(config_class=Config):
     app.register_blueprint(simulation_bp, url_prefix='/api/simulation')
     app.register_blueprint(report_bp, url_prefix='/api/report')
     
-    # Health check
+    # Health check endpoint
     @app.route('/')
     def health():
         return {'status': 'ok', 'service': 'Predly Backend'}
-    
-    if should_log_startup:
-        logger.info("Predly Backend started successfully")
+
+    # Serve Vue frontend static build (production)
+    import os as _os
+    from flask import send_from_directory as _sfd
+    _dist = _os.path.join(_os.path.dirname(__file__), '../../frontend/dist')
+
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve_frontend(path):
+        full = _os.path.join(_dist, path)
+        if path and _os.path.exists(full) and not _os.path.isdir(full):
+            return _sfd(_dist, path)
+        return _sfd(_dist, 'index.html')
     
     return app
