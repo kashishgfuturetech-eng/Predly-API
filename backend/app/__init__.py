@@ -71,7 +71,7 @@ def create_app(config_class=Config):
     app.register_blueprint(graph_bp, url_prefix='/api/graph')
     app.register_blueprint(simulation_bp, url_prefix='/api/simulation')
     app.register_blueprint(report_bp, url_prefix='/api/report')
-    
+
     # Health check
     @app.route('/api/health')
     def health():
@@ -81,7 +81,8 @@ def create_app(config_class=Config):
     import os as _os
     from flask import send_from_directory as _sfd
     _dist = _os.path.join(_os.path.dirname(__file__), '../../frontend/dist')
-    print(f"[DEBUG] frontend dist path: {_dist}, exists: {_os.path.exists(_dist)}", flush=True)
+
+    print(f"[startup] frontend dist: {_dist}, exists: {_os.path.exists(_dist)}", flush=True)
 
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
@@ -90,5 +91,5 @@ def create_app(config_class=Config):
         if path and _os.path.exists(full) and not _os.path.isdir(full):
             return _sfd(_dist, path)
         return _sfd(_dist, 'index.html')
-    
+
     return app

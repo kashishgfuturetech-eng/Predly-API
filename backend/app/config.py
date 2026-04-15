@@ -21,7 +21,7 @@ class Config:
     
     # Flask settings
     SECRET_KEY = os.environ.get('SECRET_KEY', 'predly-secret-key')
-    DEBUG = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
+    DEBUG = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     
     # JSON settings
     JSON_AS_ASCII = False
