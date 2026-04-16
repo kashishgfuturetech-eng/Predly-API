@@ -212,7 +212,8 @@ function addLog(msg, type = 'info') {
 }
 
 /**
- * Generate a simulation prompt using Claude based on uploaded document metadata
+ * Generate a simulation prompt using the backend LLM based on uploaded documents.
+ * Sends files as multipart so the backend can extract real text content.
  */
 async function generateAIPrompt() {
   if (isGenerating.value || !pendingFiles.value.length) return
@@ -221,28 +222,23 @@ async function generateAIPrompt() {
   errorMsg.value = ''
 
   try {
-    const fileNames = pendingFiles.value.map(f => f.name).join(', ')
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10000/api'
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const form = new FormData()
+    // Include all files so the backend can extract actual text
+    pendingFiles.value.forEach(f => form.append('files', f))
+    // Also send names as fallback in case a file type can't be parsed
+    form.append('file_names', pendingFiles.value.map(f => f.name).join(','))
+
+    const response = await fetch(`${BASE_URL}/graph/prompt/generate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: `I have uploaded these documents to a multi-agent simulation system called Predly: ${fileNames}
-
-Based on these document names and context, generate a compelling simulation prompt that describes what social dynamics, public opinion shifts, or real-world scenarios could be predicted and simulated from these documents. 
-
-Return ONLY the prompt text itself (2-3 sentences max), no preamble or explanation. Make it specific, actionable, and vivid.`
-        }]
-      })
+      body: form,
     })
 
-    if (!response.ok) throw new Error('AI generation failed')
     const data = await response.json()
-    const generated = data.content?.find(c => c.type === 'text')?.text || ''
+    if (!response.ok || !data.success) throw new Error(data.error || 'AI generation failed')
+
+    const generated = data.data?.prompt || ''
     if (generated) {
       prompt.value = generated.trim()
     } else {

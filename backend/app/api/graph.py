@@ -4,6 +4,7 @@ Uses project context mechanism with server-side persistent state
 """
 
 import os
+import tempfile
 import traceback
 import threading
 from flask import request, jsonify
@@ -14,6 +15,7 @@ from ..services.ontology_generator import OntologyGenerator
 from ..services.graph_builder import GraphBuilderService
 from ..services.text_processor import TextProcessor
 from ..utils.file_parser import FileParser
+from ..utils.llm_client import LLMClient
 from ..utils.logger import get_logger
 from ..models.task import TaskManager, TaskStatus
 from ..models.project import ProjectManager, ProjectStatus
@@ -259,6 +261,95 @@ def generate_ontology():
             "error": str(e),
             "traceback": traceback.format_exc()
         }), 500
+
+
+# ============== Endpoint 1b: Generate AI Simulation Prompt ==============
+
+@graph_bp.route('/prompt/generate', methods=['POST'])
+def generate_ai_prompt():
+    """
+    Generate a simulation prompt suggestion based on uploaded documents.
+
+    Accepts multipart/form-data:
+        files (optional) — same file list from the upload page
+        file_names (optional) — comma-separated list of file names as fallback
+
+    Returns:
+        { "success": true, "data": { "prompt": "..." } }
+    """
+    try:
+        # ── Collect document text ──────────────────────────────────────────────
+        document_texts = []
+        file_labels = []
+
+        uploaded_files = request.files.getlist('files')
+        for file in uploaded_files:
+            if file and file.filename and allowed_file(file.filename):
+                try:
+                    suffix = os.path.splitext(file.filename)[1]
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                        file.save(tmp.name)
+                        text = FileParser.extract_text(tmp.name)
+                        text = TextProcessor.preprocess_text(text)
+                    os.unlink(tmp.name)
+                    if text.strip():
+                        document_texts.append(text[:4000])  # cap per file
+                        file_labels.append(file.filename)
+                except Exception:
+                    pass  # gracefully skip unreadable files
+
+        # Fallback: use file names only if no text was extracted
+        raw_names = request.form.get('file_names', '')
+        if not file_labels and raw_names:
+            file_labels = [n.strip() for n in raw_names.split(',') if n.strip()]
+
+        if not file_labels:
+            return jsonify({"success": False, "error": "No files provided"}), 400
+
+        # ── Build LLM prompt ───────────────────────────────────────────────────
+        if document_texts:
+            combined = "\n\n".join(
+                f"=== {name} ===\n{text}"
+                for name, text in zip(file_labels, document_texts)
+            )
+            user_msg = (
+                f"I am uploading documents to a multi-agent social simulation system called Predly.\n\n"
+                f"Here is the content of the uploaded documents:\n\n{combined}\n\n"
+                "Based on the actual content above, write a compelling simulation requirement prompt "
+                "(2–3 sentences, plain text only, no preamble) that describes what social dynamics, "
+                "public opinion shifts, or real-world scenarios could be predicted and simulated from "
+                "these documents. Be specific and actionable."
+            )
+        else:
+            names_str = ', '.join(file_labels)
+            user_msg = (
+                f"I am uploading these documents to a multi-agent social simulation system called Predly: {names_str}\n\n"
+                "Based on these document names, write a compelling simulation requirement prompt "
+                "(2–3 sentences, plain text only, no preamble) that describes what social dynamics, "
+                "public opinion shifts, or real-world scenarios could be predicted and simulated. "
+                "Be specific and actionable."
+            )
+
+        llm = LLMClient()
+        generated = llm.chat(
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an expert at designing social simulation scenarios. "
+                        "Output ONLY the prompt text itself — no JSON, no labels, no explanation, no quotes."
+                    ),
+                },
+                {"role": "user", "content": user_msg},
+            ],
+            max_tokens=300,
+        )
+
+        return jsonify({"success": True, "data": {"prompt": generated.strip()}})
+
+    except Exception as e:
+        logger.error(f"Prompt generation failed: {traceback.format_exc()}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # ============== Endpoint 2: Build Graph ==============

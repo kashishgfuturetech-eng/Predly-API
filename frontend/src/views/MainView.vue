@@ -74,6 +74,7 @@ import Step2EnvSetup from '../components/Step2EnvSetup.vue'
 import Step3Simulation from '../components/Step3Simulation.vue'
 import Step4Report from '../components/Step4Report.vue'
 import Step5Interaction from '../components/Step5Interaction.vue'
+import { generateOntology } from '../api.js'
 
 const props = defineProps({ projectId: String })
 const router = useRouter()
@@ -132,8 +133,19 @@ function onStepCompleted(step, data) {
   if (next) currentStep.value = next
 }
 
-onMounted(() => {
+onMounted(async () => {
   currentStep.value = 'graph'
+  if (props.projectId) {
+    try {
+      const result = await generateOntology(props.projectId)
+      const data = result?.data ?? result
+      if (data?.ontology)  projectData.value.ontology  = data.ontology
+      if (data?.files)     projectData.value.files     = data.files
+      if (data?.graph_id)  projectData.value.graph_id  = data.graph_id
+    } catch (e) {
+      console.warn('Could not load project data:', e.message)
+    }
+  }
 })
 </script>
 
