@@ -13,10 +13,12 @@
         <div class="landing__logo font-headline">
           <span class="landing__logo-dot"></span>Predly
         </div>
-        <div class="landing__status-badge">
-          <span class="landing__status-dot"></span>
-          <span class="font-mono" style="font-size:0.6875rem;letter-spacing:0.1em;color:var(--text-muted)">ENGINE STATUS: V2.4 ACTIVE</span>
-        </div>
+        <nav class="landing__nav">
+          <a class="landing__nav-link landing__nav-link--active font-mono" href="#">Simulations</a>
+          <a class="landing__nav-link font-mono" href="#">Solutions</a>
+          <a class="landing__nav-link font-mono" href="#">Casestudies</a>
+        </nav>
+        <button class="landing__inquiry-btn font-headline">Inquiry</button>
       </div>
     </header>
 
@@ -25,7 +27,7 @@
       <section class="landing__hero">
 
         <div class="landing__engine-tag animate-fade-up" style="animation-delay:0ms">
-          <span class="landing__engine-dot"></span>
+          <span class="landing__engine-dot landing__engine-dot--green"></span>
           <span class="font-mono" style="font-size:0.6875rem;letter-spacing:0.12em">ENGINE STATUS: V2.4 ACTIVE</span>
         </div>
 
@@ -207,13 +209,17 @@ function goToPrompt() {
   top: 0; left: 0; right: 0;
   z-index: 100;
   padding: 1.125rem 2rem;
+  background: rgba(10, 12, 15, 0.75);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(171, 137, 127, 0.1);
 }
 .landing__topbar-inner {
-  max-width: 960px;
+  max-width: 1100px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
 }
 .landing__logo {
   font-size: 1.125rem;
@@ -222,24 +228,66 @@ function goToPrompt() {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 .landing__logo-dot {
   width: 6px; height: 6px;
   border-radius: 50%;
   background: var(--primary-container);
 }
-.landing__status-badge {
+
+/* Nav tabs */
+.landing__nav {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: rgba(16, 20, 25, 0.85);
-  border: 1px solid rgba(171, 137, 127, 0.18);
-  border-radius: 999px;
-  padding: 0.375rem 0.875rem;
-  backdrop-filter: blur(10px);
+  gap: 0.25rem;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
-.landing__status-dot {
-  width: 6px; height: 6px;
+.landing__nav-link {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 0.375rem 0.875rem;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  transition: color 0.15s;
+}
+.landing__nav-link:hover {
+  color: var(--text-primary);
+}
+.landing__nav-link--active {
+  color: var(--primary-container);
+  border-bottom: 1.5px solid var(--primary-container);
+  border-radius: 0;
+  padding-bottom: 0.25rem;
+}
+
+/* Inquiry button */
+.landing__inquiry-btn {
+  flex-shrink: 0;
+  padding: 0.5rem 1.25rem;
+  background: linear-gradient(135deg, #FF5A1F 0%, #FF8C5A 100%);
+  border: none;
+  border-radius: var(--radius-lg);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 12px rgba(255, 90, 31, 0.35);
+}
+.landing__inquiry-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(255, 90, 31, 0.5);
+}
+
+/* Engine dot green variant */
+.landing__engine-dot--green {
+  width: 5px; height: 5px;
   border-radius: 50%;
   background: #86EFAC;
   box-shadow: 0 0 6px #86EFAC;
@@ -285,12 +333,7 @@ function goToPrompt() {
   color: var(--text-muted);
   backdrop-filter: blur(8px);
 }
-.landing__engine-dot {
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: var(--primary-container);
-  box-shadow: 0 0 6px var(--primary-container);
-}
+
 
 /* Headline */
 .landing__headline {
