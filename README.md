@@ -1,203 +1,426 @@
-<div align="center">
+# Predly — Swarm Intelligence Prediction Engine
 
-<img src="./static/image/Predly_logo_compressed.jpeg" alt="Predly Logo" width="75%"/>
+> **A Simple and Universal Swarm Intelligence Engine, Predicting Anything**
 
-<a href="https://trendshift.io/repositories/16144" target="_blank"><img src="https://trendshift.io/api/badge/repositories/16144" alt="666ghj%2FPredly | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+Predly is a next-generation AI prediction engine powered by multi-agent technology. By extracting seed information from real-world sources (breaking news, policy drafts, financial signals, literary texts), it automatically constructs a high-fidelity parallel digital world. Thousands of intelligent agents with independent personalities, long-term memory, and behavioral logic freely interact and undergo social evolution inside this sandbox. You can inject variables dynamically from a "God's-eye view" to precisely deduce future trajectories.
 
-简洁通用的群体智能引擎，预测万物
-</br>
-<em>A Simple and Universal Swarm Intelligence Engine, Predicting Anything</em>
+**Upload seed materials → describe your prediction goal → receive a detailed prediction report and a deeply interactive digital world.**
 
-<a href="https://www.shanda.com/" target="_blank"><img src="./static/image/shanda_logo.png" alt="666ghj%2Predly | Shanda" height="40"/></a>
+---
 
-[![GitHub Stars](https://img.shields.io/github/stars/666ghj/Predly?style=flat-square&color=DAA520)](https://github.com/666ghj/Predly/stargazers)
-[![GitHub Watchers](https://img.shields.io/github/watchers/666ghj/Predly?style=flat-square)](https://github.com/666ghj/Predly/watchers)
-[![GitHub Forks](https://img.shields.io/github/forks/666ghj/Predly?style=flat-square)](https://github.com/666ghj/Predly/network)
-[![Docker](https://img.shields.io/badge/Docker-Build-2496ED?style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/666ghj/Predly)
+## Table of Contents
 
-[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com/channels/1469200078932545606/1469201282077163739)
-[![X](https://img.shields.io/badge/X-Follow-000000?style=flat-square&logo=x&logoColor=white)](https://x.com/predly_ai)
-[![Instagram](https://img.shields.io/badge/Instagram-Follow-E4405F?style=flat-square&logo=instagram&logoColor=white)](https://www.instagram.com/predly_ai/)
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Environment Variables](#environment-variables)
+- [Running Locally](#running-locally)
+  - [Option A: Source Code (Recommended)](#option-a-source-code-recommended)
+  - [Option B: Docker](#option-b-docker)
+- [Workflow & Features](#workflow--features)
+- [API Reference](#api-reference)
+- [Configuration Reference](#configuration-reference)
+- [Scripts](#scripts)
+- [License](#license)
 
-[English](./README-EN.md) | [中文文档](./README.md)
+---
 
-</div>
+## Overview
 
-## ⚡ 项目概述
+Predly is built around a five-step pipeline:
 
-**Predly** 是一款基于多智能体技术的新一代 AI 预测引擎。通过提取现实世界的种子信息（如突发新闻、政策草案、金融信号），自动构建出高保真的平行数字世界。在此空间内，成千上万个具备独立人格、长期记忆与行为逻辑的智能体进行自由交互与社会演化。你可透过「上帝视角」动态注入变量，精准推演未来走向——**让未来在数字沙盘中预演，助决策在百战模拟后胜出**。
+1. **Graph Building** — Upload seed documents; the system extracts entities, relationships, and injects them into a knowledge graph (powered by Zep Cloud).
+2. **Environment Setup** — Entity types are filtered and enriched; agent personas are auto-generated from the graph.
+3. **Simulation** — Agents simulate dual-platform social interactions (Twitter-style & Reddit-style) with dynamic temporal memory updates.
+4. **Report Generation** — A dedicated `ReportAgent` with a rich toolset queries the post-simulation world and produces a structured prediction report.
+5. **Deep Interaction** — Chat with any individual agent in the simulated world, or continue a dialogue with the ReportAgent.
 
-> 你只需：上传种子材料（数据分析报告或者有趣的小说故事），并用自然语言描述预测需求</br>
-> Predly 将返回：一份详尽的预测报告，以及一个可深度交互的高保真数字世界
+### Use Cases
 
-### 我们的愿景
+- **Policy & PR rehearsal** — Test how a policy or announcement ripples through a population before release.
+- **Public opinion prediction** — Simulate social media reactions to news events.
+- **Creative exploration** — Deduce fictional story endings (e.g., literary "lost chapter" reconstruction).
+- **Financial & political scenarios** — Model crowd reactions to financial signals or electoral events.
 
-Predly 致力于打造映射现实的群体智能镜像，通过捕捉个体互动引发的群体涌现，突破传统预测的局限：
+---
 
-- **于宏观**：我们是决策者的预演实验室，让政策与公关在零风险中试错
-- **于微观**：我们是个人用户的创意沙盘，无论是推演小说结局还是探索脑洞，皆可有趣、好玩、触手可及
+## Architecture
 
-从严肃预测到趣味仿真，我们让每一个如果都能看见结果，让预测万物成为可能。
+```
+┌─────────────────────────────────────────────────────────┐
+│                     Vue 3 Frontend                      │
+│  Home → Step1(Graph) → Step2(Env) → Step3(Sim) →        │
+│         Step4(Report) → Step5(Interaction)              │
+└────────────────────────┬────────────────────────────────┘
+                         │ HTTP (axios)
+┌────────────────────────▼────────────────────────────────┐
+│               Flask Backend  :5001                      │
+│                                                         │
+│  /api/graph/*        Graph & Ontology routes            │
+│  /api/simulation/*   Simulation & Entity routes         │
+│  /api/report/*       Report Agent routes                │
+│                                                         │
+│  Services:                                              │
+│  ├── OntologyGenerator      (LLM → entity/edge schema)  │
+│  ├── GraphBuilderService    (Zep Cloud graph creation)  │
+│  ├── ZepEntityReader        (entity/relationship fetch) │
+│  ├── OasisProfileGenerator  (agent persona generation)  │
+│  ├── SimulationManager      (orchestration & state)     │
+│  ├── SimulationRunner       (OASIS engine execution)    │
+│  ├── ReportAgent            (post-sim analysis & chat)  │
+│  └── ZepGraphMemoryUpdater  (live memory updates)       │
+└───────────┬─────────────────────────┬───────────────────┘
+            │                         │
+  ┌─────────▼──────────┐   ┌──────────▼──────────────┐
+  │    Zep Cloud        │   │   OASIS Simulation       │
+  │  (Graph Memory)     │   │  (camel-oasis engine)    │
+  └────────────────────┘   └─────────────────────────┘
+            │
+  ┌─────────▼──────────┐
+  │   LLM Providers     │
+  │  Primary: Groq      │
+  │  Boost:   Gemini    │
+  └────────────────────┘
+```
 
-## 🌐 在线体验
+---
 
-欢迎访问在线 Demo 演示环境，体验我们为你准备的一次关于热点舆情事件的推演预测：[predly-live-demo](https://666ghj.github.io/predly-demo/)
+## Tech Stack
 
-## 📸 系统截图
+| Layer | Technology |
+|---|---|
+| **Frontend** | Vue 3, Vue Router 4, Vite, Axios, D3.js |
+| **Backend** | Python 3.11–3.12, Flask 3, Flask-CORS |
+| **LLM Client** | OpenAI SDK (provider-agnostic) — Groq / Gemini / Qwen / any OpenAI-compatible API |
+| **Graph Memory** | Zep Cloud (`zep-cloud 3.13.0`) |
+| **Simulation Engine** | OASIS (`camel-oasis 0.2.5`, `camel-ai 0.2.78`) |
+| **File Parsing** | PyMuPDF (PDF), charset-normalizer / chardet (text encoding) |
+| **Data Validation** | Pydantic v2 |
+| **Package Manager (Python)** | `uv` |
+| **Package Manager (JS)** | npm |
+| **Containerisation** | Docker / Docker Compose |
 
-<div align="center">
-<table>
-<tr>
-<td><img src="./static/image/Screenshot/运行截图1.png" alt="截图1" width="100%"/></td>
-<td><img src="./static/image/Screenshot/运行截图2.png" alt="截图2" width="100%"/></td>
-</tr>
-<tr>
-<td><img src="./static/image/Screenshot/运行截图3.png" alt="截图3" width="100%"/></td>
-<td><img src="./static/image/Screenshot/运行截图4.png" alt="截图4" width="100%"/></td>
-</tr>
-<tr>
-<td><img src="./static/image/Screenshot/运行截图5.png" alt="截图5" width="100%"/></td>
-<td><img src="./static/image/Screenshot/运行截图6.png" alt="截图6" width="100%"/></td>
-</tr>
-</table>
-</div>
+---
 
-## 🎬 演示视频
+## Project Structure
 
-### 1. 武汉大学舆情推演预测 + Predly项目讲解
+```
+Predly-API-main/
+├── .env.example                  # Environment variable template
+├── docker-compose.yml            # Docker deployment
+├── Dockerfile
+├── package.json                  # Root npm scripts (dev, setup, build)
+│
+├── frontend/                     # Vue 3 SPA
+│   ├── src/
+│   │   ├── views/
+│   │   │   ├── Home.vue
+│   │   │   ├── MainView.vue      # Step 1–4 container
+│   │   │   ├── SimulationView.vue
+│   │   │   ├── ReportView.vue
+│   │   │   └── InteractionView.vue
+│   │   ├── components/
+│   │   │   ├── Step1GraphBuild.vue
+│   │   │   ├── Step2EnvSetup.vue
+│   │   │   ├── Step3Simulation.vue
+│   │   │   ├── Step4Report.vue
+│   │   │   └── Step5Interaction.vue
+│   │   ├── api.js                # Axios API client
+│   │   └── router/index.js
+│   └── vite.config.js
+│
+└── backend/
+    ├── run.py                    # Flask entry point (port 5001)
+    ├── requirements.txt
+    ├── pyproject.toml
+    └── app/
+        ├── config.py             # All config loaded from .env
+        ├── api/
+        │   ├── graph.py          # /api/graph/* endpoints
+        │   ├── simulation.py     # /api/simulation/* endpoints
+        │   └── report.py         # /api/report/* endpoints
+        ├── models/
+        │   ├── project.py        # ProjectManager, ProjectStatus
+        │   └── task.py           # TaskManager, TaskStatus
+        ├── services/
+        │   ├── ontology_generator.py        # LLM → ontology schema
+        │   ├── graph_builder.py             # Zep graph CRUD
+        │   ├── text_processor.py            # Chunking & preprocessing
+        │   ├── zep_entity_reader.py         # Entity/edge retrieval
+        │   ├── zep_graph_memory_updater.py  # Live graph updates
+        │   ├── zep_tools.py                 # Zep utility functions
+        │   ├── oasis_profile_generator.py   # Agent persona generation
+        │   ├── simulation_config_generator.py
+        │   ├── simulation_manager.py        # Simulation lifecycle
+        │   ├── simulation_runner.py         # OASIS execution
+        │   ├── simulation_ipc.py            # Inter-process comms
+        │   └── report_agent.py              # Post-sim report & chat
+        └── utils/
+            ├── llm_client.py      # Multi-key rotating LLM client
+            ├── file_parser.py     # PDF / MD / TXT extraction
+            ├── logger.py
+            ├── retry.py
+            └── zep_paging.py
+```
 
-<div align="center">
-<a href="https://www.bilibili.com/video/BV1VYBsBHEMY/" target="_blank"><img src="./static/image/武大模拟演示封面.png" alt="Predly Demo Video" width="75%"/></a>
+---
 
-点击图片查看使用微舆BettaFish生成的《武大舆情报告》进行预测的完整演示视频
-</div>
+## Environment Variables
 
-### 2. 《红楼梦》失传结局推演预测
-
-<div align="center">
-<a href="https://www.bilibili.com/video/BV1cPk3BBExq" target="_blank"><img src="./static/image/红楼梦模拟推演封面.jpg" alt="Predly Demo Video" width="75%"/></a>
-
-点击图片查看基于《红楼梦》前80回数十万字，Predly深度预测失传结局
-</div>
-
-> **金融方向推演预测**、**时政要闻推演预测**等示例陆续更新中...
-
-## 🔄 工作流程
-
-1. **图谱构建**：现实种子提取 & 个体与群体记忆注入 & GraphRAG构建
-2. **环境搭建**：实体关系抽取 & 人设生成 & 环境配置Agent注入仿真参数
-3. **开始模拟**：双平台并行模拟 & 自动解析预测需求 & 动态更新时序记忆
-4. **报告生成**：ReportAgent拥有丰富的工具集与模拟后环境进行深度交互
-5. **深度互动**：与模拟世界中的任意一位进行对话 & 与ReportAgent进行对话
-
-## 🚀 快速开始
-
-### 一、源码部署（推荐）
-
-#### 前置要求
-
-| 工具 | 版本要求 | 说明 | 安装检查 |
-|------|---------|------|---------|
-| **Node.js** | 18+ | 前端运行环境，包含 npm | `node -v` |
-| **Python** | ≥3.11, ≤3.12 | 后端运行环境 | `python --version` |
-| **uv** | 最新版 | Python 包管理器 | `uv --version` |
-
-#### 1. 配置环境变量
+Copy the example file and fill in your keys:
 
 ```bash
-# 复制示例配置文件
 cp .env.example .env
-
-# 编辑 .env 文件，填入必要的 API 密钥
 ```
 
-**必需的环境变量：**
+| Variable | Required | Description |
+|---|---|---|
+| `LLM_API_KEY` / `LLM_API_KEY_1` | ✅ | Primary LLM API key (Groq, Qwen, or any OpenAI-compatible provider) |
+| `LLM_API_KEY_2`, `LLM_API_KEY_3`, `LLM_API_KEY_4` | ➖ | Additional primary keys — auto-rotated on rate limit |
+| `LLM_BASE_URL` | ✅ | Base URL of the primary LLM provider |
+| `LLM_MODEL_NAME` | ✅ | Model name for the primary LLM |
+| `ZEP_API_KEY` | ✅ | Zep Cloud API key — free tier sufficient for basic usage |
+| `LLM_BOOST_API_KEY_1/2/3` | ➖ | Boost LLM keys (e.g. Gemini) for heavier reasoning tasks |
+| `LLM_BOOST_BASE_URL` | ➖ | Base URL for boost LLM |
+| `LLM_BOOST_MODEL_NAME` | ➖ | Model name for boost LLM (e.g. `gemini-2.5-flash`) |
+| `OASIS_DEFAULT_MAX_ROUNDS` | ➖ | Max simulation rounds (default: `3`; keep low to avoid token overflow) |
+| `REPORT_AGENT_MAX_TOOL_CALLS` | ➖ | Tool call budget per report agent turn (default: `1`) |
+| `REPORT_AGENT_MAX_REFLECTION_ROUNDS` | ➖ | Reflection depth of report agent (default: `1`) |
+| `REPORT_AGENT_TEMPERATURE` | ➖ | Temperature for report generation (default: `0.3`) |
 
-```env
-# LLM API配置（支持 OpenAI SDK 格式的任意 LLM API）
-# 推荐使用阿里百炼平台qwen-plus模型：https://bailian.console.aliyun.com/
-# 注意消耗较大，可先进行小于40轮的模拟尝试
-LLM_API_KEY=your_api_key
-LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-LLM_MODEL_NAME=qwen-plus
+### Recommended Free-Tier Setup
 
-# Zep Cloud 配置
-# 每月免费额度即可支撑简单使用：https://app.getzep.com/
-ZEP_API_KEY=your_zep_api_key
-```
+- **Primary LLM**: [Groq](https://console.groq.com/) — use `meta-llama/llama-4-scout-17b-16e-instruct` or similar
+- **Boost LLM**: [Google AI Studio](https://aistudio.google.com/) — `gemini-2.5-flash` (generous free quota)
+- **Graph Memory**: [Zep Cloud](https://app.getzep.com/) — free monthly quota covers simple simulations
 
-#### 2. 安装依赖
+Alternatively, use Alibaba's [Bailian Platform](https://bailian.console.aliyun.com/) with `qwen-plus` for both primary and boost.
+
+---
+
+## Running Locally
+
+### Prerequisites
+
+| Tool | Version | Check |
+|---|---|---|
+| Node.js | ≥ 18 | `node -v` |
+| Python | ≥ 3.11, ≤ 3.12 | `python --version` |
+| uv | Latest | `uv --version` |
+
+Install `uv` if you don't have it:
 
 ```bash
-# 一键安装所有依赖（根目录 + 前端 + 后端）
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+---
+
+### Option A: Source Code (Recommended)
+
+#### Step 1 — Clone & configure
+
+```bash
+git clone https://github.com/kashishgfuturetech-eng/Predly-API.git
+cd Predly
+
+# Copy and fill in environment variables
+cp .env.example .env
+# Edit .env — at minimum set LLM_API_KEY, LLM_BASE_URL, LLM_MODEL_NAME, ZEP_API_KEY
+```
+
+#### Step 2 — Install all dependencies (one command)
+
+```bash
 npm run setup:all
 ```
 
-或者分步安装：
+This installs:
+- Root Node.js dependencies (`concurrently`)
+- Frontend Node.js dependencies (Vue 3, Vite, Axios, D3)
+- Backend Python dependencies via `uv` (Flask, OpenAI SDK, camel-oasis, Zep, PyMuPDF, etc.)
+
+Or install step by step:
 
 ```bash
-# 安装 Node 依赖（根目录 + 前端）
-npm run setup
-
-# 安装 Python 依赖（后端，自动创建虚拟环境）
-npm run setup:backend
+npm run setup          # Node deps (root + frontend)
+npm run setup:backend  # Python deps (creates venv automatically via uv)
 ```
 
-#### 3. 启动服务
+#### Step 3 — Start both servers
 
 ```bash
-# 同时启动前后端（在项目根目录执行）
 npm run dev
 ```
 
-**服务地址：**
-- 前端：`http://localhost:3000`
-- 后端 API：`http://localhost:5001`
+This concurrently starts:
 
-**单独启动：**
+| Service | URL |
+|---|---|
+| **Frontend** (Vue / Vite dev server) | http://localhost:3000 |
+| **Backend** (Flask API) | http://localhost:5001 |
+
+#### Start services individually
 
 ```bash
-npm run backend   # 仅启动后端
-npm run frontend  # 仅启动前端
+npm run backend    # Flask backend only
+npm run frontend   # Vite frontend only
 ```
 
-### 二、Docker 部署
+---
+
+### Option B: Docker
 
 ```bash
-# 1. 配置环境变量（同源码部署）
+# 1. Configure environment variables
 cp .env.example .env
+# Edit .env with your API keys
 
-# 2. 拉取镜像并启动
+# 2. Pull image and start
 docker compose up -d
 ```
 
-默认会读取根目录下的 `.env`，并映射端口 `3000（前端）/5001（后端）`
+The container exposes:
+- Port `3000` — Frontend
+- Port `10000` — Backend API (mapped from internal 5001)
 
-> 在 `docker-compose.yml` 中已通过注释提供加速镜像地址，可按需替换
+Uploaded files are persisted via a volume mount at `./backend/uploads`.
 
-## 📬 更多交流
+To stop:
 
-<div align="center">
-<img src="./static/image/QQ群.png" alt="QQ交流群" width="60%"/>
-</div>
+```bash
+docker compose down
+```
 
-&nbsp;
+> If image pull is slow, the `docker-compose.yml` includes a comment with a mirror address — swap the image line as instructed.
 
-Predly团队长期招募全职/实习，如果你对多Agent应用感兴趣，欢迎投递简历至：**predly@shanda.com**
+---
 
-## 📄 致谢
+## Workflow & Features
 
-**Predly 得到了盛大集团的战略支持和孵化！**
+### Step 1 — Graph Building
 
-Predly 的仿真引擎由 **[OASIS](https://github.com/camel-ai/oasis)** 驱动，我们衷心感谢 CAMEL-AI 团队的开源贡献！
+- Upload seed documents in **PDF, MD, or TXT** format (up to 50 MB total)
+- Describe your simulation goal in natural language
+- The system calls the LLM to generate an **ontology** (entity types + relationship types) tailored to your documents
+- Text is chunked and injected into a **Zep Cloud knowledge graph** in batches
+- Progress is tracked asynchronously via a task polling endpoint
 
-## 📈 项目统计
+### Step 2 — Environment Setup
 
-<a href="https://www.star-history.com/#666ghj/Predly&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=666ghj/Predly&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=666ghj/Predly&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=666ghj/Predly&type=date&legend=top-left" />
- </picture>
-</a>
+- Entity nodes are fetched and filtered from the graph
+- Relationship edges are enriched per entity
+- **Agent personas** are auto-generated by the LLM from graph data (background, personality, behavioral tendencies)
+- Simulation configuration is prepared for the OASIS engine
+
+### Step 3 — Simulation
+
+- Dual-platform parallel simulation:
+  - **Twitter-style** actions: `CREATE_POST`, `LIKE_POST`, `REPOST`, `FOLLOW`, `DO_NOTHING`, `QUOTE_POST`
+  - **Reddit-style** actions: `LIKE_POST`, `DISLIKE_POST`, `CREATE_POST`, `CREATE_COMMENT`, `SEARCH_POSTS`, `TREND`, `FOLLOW`, `MUTE`, and more
+- Simulation rounds are configurable via `OASIS_DEFAULT_MAX_ROUNDS`
+- Agents maintain long-term memory via Zep; memory is updated dynamically each round
+- Simulation data is saved to `backend/uploads/simulations/`
+
+### Step 4 — Report Generation
+
+- A **ReportAgent** with a rich toolset queries the post-simulation Zep graph
+- Performs deep analysis and produces a structured prediction report
+- Configurable via `REPORT_AGENT_MAX_TOOL_CALLS`, `REPORT_AGENT_MAX_REFLECTION_ROUNDS`, and `REPORT_AGENT_TEMPERATURE`
+
+### Step 5 — Deep Interaction
+
+- **Interview any agent**: Chat directly with a specific simulated agent; responses are grounded in their persona and full memory history
+- **Chat with ReportAgent**: Continue questioning the report agent to drill deeper into specific findings
+- Interview prompts are automatically prefixed to prevent tool invocation and ensure direct conversational replies
+
+---
+
+## API Reference
+
+All endpoints are served at `http://localhost:5001`.
+
+### Graph Endpoints (`/api/graph`)
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/graph/ontology/generate` | Upload files + generate ontology schema |
+| `POST` | `/api/graph/build` | Build Zep knowledge graph from project |
+| `GET` | `/api/graph/task/<task_id>` | Poll async task status |
+| `GET` | `/api/graph/tasks` | List all tasks |
+| `GET` | `/api/graph/project/<project_id>` | Get project details |
+| `GET` | `/api/graph/project/list` | List all projects |
+| `DELETE` | `/api/graph/project/<project_id>` | Delete a project |
+| `POST` | `/api/graph/project/<project_id>/reset` | Reset project to rebuild graph |
+| `GET` | `/api/graph/data/<graph_id>` | Fetch graph nodes and edges |
+| `DELETE` | `/api/graph/delete/<graph_id>` | Delete a Zep graph |
+
+### Simulation Endpoints (`/api/simulation`)
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/simulation/entities/<graph_id>` | Get filtered entities from graph |
+| `POST` | `/api/simulation/profiles/generate` | Generate agent personas |
+| `POST` | `/api/simulation/run` | Start simulation |
+| `GET` | `/api/simulation/status/<sim_id>` | Poll simulation status |
+| `POST` | `/api/simulation/interview` | Interview a specific agent |
+
+### Report Endpoints (`/api/report`)
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/report/generate` | Generate prediction report |
+| `POST` | `/api/report/chat` | Chat with ReportAgent |
+
+---
+
+## Configuration Reference
+
+All runtime configuration lives in `backend/app/config.py` and is sourced from `.env`.
+
+| Config Key | Default | Notes |
+|---|---|---|
+| `MAX_CONTENT_LENGTH` | 50 MB | Max upload size |
+| `ALLOWED_EXTENSIONS` | `pdf, md, txt, markdown` | Accepted file types |
+| `DEFAULT_CHUNK_SIZE` | 500 | Characters per text chunk |
+| `DEFAULT_CHUNK_OVERLAP` | 50 | Overlap between chunks |
+| `OASIS_DEFAULT_MAX_ROUNDS` | 3 | Simulation rounds (keep ≤ 40 for cost control) |
+| `REPORT_AGENT_MAX_TOOL_CALLS` | 1 | Tool calls per agent turn |
+| `REPORT_AGENT_MAX_REFLECTION_ROUNDS` | 1 | Agent reflection depth |
+| `REPORT_AGENT_TEMPERATURE` | 0.3 | Report LLM temperature |
+
+The LLM client supports **automatic key rotation**: if a rate limit is hit on one key, the next configured key in the list is used transparently.
+
+---
+
+## Scripts
+
+Standalone simulation scripts are available in `backend/scripts/`:
+
+| Script | Description |
+|---|---|
+| `run_twitter_simulation.py` | Run a standalone Twitter-style simulation |
+| `run_reddit_simulation.py` | Run a standalone Reddit-style simulation |
+| `run_parallel_simulation.py` | Run both platforms in parallel |
+| `action_logger.py` | Log and inspect agent actions |
+| `test_profile_format.py` | Validate generated agent profile format |
+
+Run them with:
+
+```bash
+cd backend
+uv run python scripts/run_twitter_simulation.py
+```
+
+---
+
+## License
+
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+Predly's simulation engine is powered by **[OASIS (Open Agent Social Interaction Simulations)](https://github.com/camel-ai/oasis)** by the CAMEL-AI team. Predly has received strategic support and incubation from **[Shanda Group](https://www.shanda.com/)**.
