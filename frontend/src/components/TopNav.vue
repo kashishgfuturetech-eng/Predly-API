@@ -22,22 +22,48 @@
 
     <!-- Right Actions -->
     <div class="topnav__actions">
-      <slot name="actions">
-        <a
-          href="https://github.com/nikmcfly/Predly-Offline.git"
-          target="_blank"
-          class="btn-ghost topnav__github label-sm"
-        >
-          <span class="material-symbols-outlined" style="font-size:16px">open_in_new</span>
-          Github
-        </a>
-      </slot>
+      <!-- Authenticated user -->
+      <template v-if="user">
+        <div class="topnav__user">
+          <img
+            v-if="user.picture"
+            :src="user.picture"
+            :alt="user.name"
+            class="topnav__avatar"
+            referrerpolicy="no-referrer"
+          />
+          <span v-else class="topnav__avatar-fallback">
+            {{ user.name?.charAt(0) || user.email?.charAt(0) || '?' }}
+          </span>
+          <span class="topnav__user-name label-sm">{{ user.name || user.email }}</span>
+        </div>
+        <button class="btn-ghost topnav__logout label-sm" @click="handleLogout">
+          <span class="material-symbols-outlined" style="font-size:15px">logout</span>
+          Sign out
+        </button>
+      </template>
+
+      <!-- Unauthenticated -->
+      <template v-else>
+        <slot name="actions">
+          <a
+            href="https://github.com/nikmcfly/Predly-Offline.git"
+            target="_blank"
+            class="btn-ghost topnav__github label-sm"
+          >
+            <span class="material-symbols-outlined" style="font-size:16px">open_in_new</span>
+            Github
+          </a>
+        </slot>
+      </template>
     </div>
   </nav>
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { getUser, logout } from '../auth.js'
 
 const props = defineProps({
   showLinks: { type: Boolean, default: false },
@@ -47,6 +73,7 @@ const props = defineProps({
 })
 
 const route = useRoute()
+const user = computed(() => getUser())
 
 const navLinks = [
   { label: 'Dashboard', to: '/' },
@@ -57,6 +84,10 @@ const navLinks = [
 
 function isActive(link) {
   return route.path === link.to || props.activeStep === link.label
+}
+
+function handleLogout() {
+  logout()
 }
 </script>
 
@@ -138,4 +169,52 @@ function isActive(link) {
   font-size: 0.6875rem;
   letter-spacing: 0.06em;
 }
+
+/* User info */
+.topnav__user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.topnav__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.topnav__avatar-fallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF5A1F, #FF8C5A);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+}
+
+.topnav__user-name {
+  color: var(--text-secondary);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topnav__logout {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+.topnav__logout:hover { color: var(--text-secondary); }
 </style>
