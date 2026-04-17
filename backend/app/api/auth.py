@@ -22,6 +22,8 @@ def _create_jwt(user_info: dict) -> str:
         'email': user_info['email'],
         'name': user_info.get('name', ''),
         'picture': user_info.get('picture', ''),
+        'is_admin': user_info.get('is_admin', False),
+        'role': user_info.get('role', 'user'),
         'iat': int(time.time()),
         'exp': int(time.time()) + 86400 * 7,  # 7 days
     }
@@ -141,13 +143,19 @@ def credentials_login():
     if not email or not passkey:
         return jsonify({'success': False, 'error': 'Email and passkey are required.'}), 400
 
-    from ..services.user_store import verify_user
+    from ..services.user_store import verify_user, get_user_role
     if not verify_user(email, passkey):
         return jsonify({'success': False, 'error': 'Invalid email or passkey.'}), 401
 
-    user_info = {'sub': f'local:{email}', 'email': email, 'name': email.split('@')[0], 'picture': ''}
+    role = get_user_role(email)
+    is_admin = (role == 'admin')
+    user_info = {
+        'sub': f'local:{email}', 'email': email,
+        'name': email.split('@')[0], 'picture': '',
+        'is_admin': is_admin, 'role': role,
+    }
     token = _create_jwt(user_info)
-    return jsonify({'success': True, 'data': {'token': token}})
+    return jsonify({'success': True, 'data': {'token': token, 'is_admin': is_admin, 'role': role}})
 
 
 @auth_bp.route('/logout', methods=['POST'])
