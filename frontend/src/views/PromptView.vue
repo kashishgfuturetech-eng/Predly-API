@@ -151,6 +151,7 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { uploadProject } from '../api.js'
+import { setPendingProject } from '../auth.js'
 
 const router = useRouter()
 const logBody = ref(null)
@@ -270,14 +271,16 @@ async function submitPrompt() {
     if (!projectId) throw new Error('Backend did not return a project_id')
 
     addLog(`Project created — ID: ${projectId}`)
-    loadingMsg.value = 'Ontology generated — loading workspace…'
+    loadingMsg.value = 'Ontology generated — please sign in to continue…'
     addLog('Ontology generation complete ✓')
-    addLog('Redirecting to workspace…')
+    addLog('Redirecting to sign-in…')
 
     // Clear global file store
     window.__predlyPendingFiles = null
 
-    await router.push({ name: 'Main', params: { projectId } })
+    // Save project so login page can redirect to it after auth
+    setPendingProject(projectId)
+    await router.push({ name: 'Login' })
   } catch (e) {
     errorMsg.value = e.message
     addLog(e.message, 'error')
