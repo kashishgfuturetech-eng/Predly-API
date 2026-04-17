@@ -75,6 +75,16 @@ class Config:
     REPORT_AGENT_MAX_REFLECTION_ROUNDS = int(os.environ.get('REPORT_AGENT_MAX_REFLECTION_ROUNDS', '1'))
     REPORT_AGENT_TEMPERATURE = float(os.environ.get('REPORT_AGENT_TEMPERATURE', '0.3'))
 
+    # ===== Google OAuth =====
+    GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
+    GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+
+    # ===== JWT =====
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'predly-jwt-secret-change-in-production')
+
+    # Frontend URL (used for OAuth redirects)
+    FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+
     @classmethod
     def get_primary_keys(cls) -> list:
         """Return all configured primary (Groq) API keys"""
