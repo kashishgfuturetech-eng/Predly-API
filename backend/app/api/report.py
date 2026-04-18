@@ -9,7 +9,6 @@ import threading
 from flask import request, jsonify, send_file
 
 from . import report_bp
-from ..config import Config
 from ..services.report_agent import ReportAgent, ReportManager, ReportStatus
 from ..services.simulation_manager import SimulationManager
 from ..models.project import ProjectManager
@@ -17,6 +16,32 @@ from ..models.task import TaskManager, TaskStatus
 from ..utils.logger import get_logger
 
 logger = get_logger('predly.api.report')
+
+
+def _record_prediction(report, user_email: str):
+    """Insert a completed prediction record linked to the user."""
+    if not user_email:
+        return
+    try:
+        import sqlite3, os
+        db_path = os.path.join(os.path.dirname(__file__), '../../uploads/users.db')
+        conn = sqlite3.connect(db_path)
+        try:
+            row = conn.execute('SELECT id FROM users WHERE email = ?', (user_email.lower(),)).fetchone()
+            if not row:
+                return
+            user_id = row[0]
+            title = (report.outline.title if report.outline else None) or 'GraphRAG Analysis'
+            conn.execute(
+                '''INSERT INTO predictions (user_id, title, simulation_type, status, report_id)
+                   VALUES (?, ?, ?, ?, ?)''',
+                (user_id, title, title, 'completed', report.report_id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.warning(f"Failed to record prediction: {e}")
 
 
 # ============== Report Generation Endpoints ==============
@@ -105,6 +130,15 @@ def generate_report():
                 "error": "Missing simulation requirement description"
             }), 400
         
+        # Capture user from JWT while still in request context (thread won't have it)
+        user_email = ''
+        auth_header = request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            from .auth import verify_token
+            payload = verify_token(auth_header[7:])
+            if payload:
+                user_email = (payload.get('email') or '').strip().lower()
+
         # Pre-generate report_id so it can be returned to the frontend immediately
         import uuid
         report_id = f"report_{uuid.uuid4().hex[:12]}"
@@ -153,8 +187,9 @@ def generate_report():
                 
                 # Save report
                 ReportManager.save_report(report)
-                
+
                 if report.status == ReportStatus.COMPLETED:
+                    _record_prediction(report, user_email)
                     task_manager.complete_task(
                         task_id,
                         result={

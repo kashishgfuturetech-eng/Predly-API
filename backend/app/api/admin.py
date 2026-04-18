@@ -76,10 +76,17 @@ def _ensure_predictions_table(conn):
             simulation_type TEXT NOT NULL DEFAULT 'GraphRAG Analysis',
             status          TEXT NOT NULL DEFAULT 'completed',
             accuracy        REAL,
+            title           TEXT,
+            report_id       TEXT,
             created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
     ''')
+    for col, defn in [('title', 'TEXT'), ('report_id', 'TEXT')]:
+        try:
+            conn.execute(f'ALTER TABLE predictions ADD COLUMN {col} {defn}')
+        except sqlite3.OperationalError:
+            pass
     conn.commit()
 
 
@@ -125,14 +132,27 @@ def list_users():
             (limit, offset)
         ).fetchall()
 
+    import datetime
+    now = datetime.datetime.now(datetime.timezone.utc)
+
     users = []
     for r in rows:
+        online = False
+        if r['last_session']:
+            try:
+                ls = datetime.datetime.fromisoformat(r['last_session'])
+                if ls.tzinfo is None:
+                    ls = ls.replace(tzinfo=datetime.timezone.utc)
+                online = (now - ls).total_seconds() < 900  # 15 minutes
+            except ValueError:
+                pass
         users.append({
             'id':           r['id'],
             'email':        r['email'],
             'name':         r['email'].split('@')[0].replace('.', ' ').title(),
             'role':         r['role'],
             'status':       r['status'],
+            'online':       online,
             'last_session': r['last_session'],
             'created_at':   r['created_at'],
         })
@@ -176,6 +196,36 @@ def update_user(user_id):
         )
 
     return jsonify({'success': True, 'message': 'User updated'})
+
+
+@admin_bp.route('/users/<int:user_id>/predictions')
+@require_admin
+def user_predictions(user_id):
+    """All predictions for a specific user."""
+    with _connect() as conn:
+        _ensure_predictions_table(conn)
+        total = conn.execute(
+            'SELECT COUNT(*) FROM predictions WHERE user_id = ?', (user_id,)
+        ).fetchone()[0]
+        rows = conn.execute(
+            '''SELECT id, title, simulation_type, status, report_id, created_at
+               FROM predictions WHERE user_id = ?
+               ORDER BY created_at DESC''',
+            (user_id,)
+        ).fetchall()
+
+    predictions = []
+    for r in rows:
+        predictions.append({
+            'id':              r['id'],
+            'title':           r['title'] or r['simulation_type'],
+            'simulation_type': r['simulation_type'],
+            'status':          r['status'],
+            'report_id':       r['report_id'],
+            'created_at':      r['created_at'],
+        })
+
+    return jsonify({'success': True, 'data': {'total': total, 'predictions': predictions}})
 
 
 @admin_bp.route('/users/<int:user_id>', methods=['DELETE'])

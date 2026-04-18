@@ -99,8 +99,10 @@ def update_last_session(email: str):
     """Stamp the last_session timestamp for a user."""
     import datetime
     normalized = email.lower().strip()
-    now = datetime.datetime.utcnow().isoformat(sep=' ', timespec='seconds')
-    with _connect() as conn:
-        conn.execute(
-            'UPDATE users SET last_session = ? WHERE email = ?', (now, normalized)
-        )
+    now = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+    conn = _connect()
+    try:
+        conn.execute('UPDATE users SET last_session = ? WHERE email = ?', (now, normalized))
+        conn.commit()
+    finally:
+        conn.close()

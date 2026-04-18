@@ -210,6 +210,17 @@ onMounted(() => {
     return
   }
   if (token) {
+    // Decode payload to verify admin flag before granting access
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      if (!payload.is_admin) {
+        errorMsg.value = 'This Google account does not have admin privileges.'
+        return
+      }
+    } catch {
+      errorMsg.value = 'Invalid token received.'
+      return
+    }
     setToken(token)
     const redirect = consumeRedirectAfterLogin()
     router.replace(redirect || { name: 'AdminDashboard' })
@@ -255,7 +266,7 @@ async function handleLogin() {
 }
 
 function loginWithGoogle() {
-  window.location.href = `${API_BASE}/auth/google`
+  window.location.href = `${API_BASE}/auth/google?state=admin`
 }
 </script>
 

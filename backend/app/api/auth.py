@@ -52,6 +52,7 @@ def google_login():
         'scope': 'openid email profile',
         'access_type': 'offline',
         'prompt': 'select_account',
+        'state': request.args.get('state', ''),
     }
     return redirect(f"{GOOGLE_AUTH_URL}?{urlencode(params)}")
 
@@ -92,7 +93,26 @@ def google_callback():
         return redirect(f"{frontend_url}/login?error=userinfo_failed")
 
     user_info = userinfo_resp.json()
+    email = (user_info.get('email') or '').strip().lower()
+
+    from ..services.user_store import email_exists, get_user_role, update_last_session, _connect
+    if not email_exists(email):
+        with _connect() as conn:
+            conn.execute(
+                'INSERT INTO users (email, passkey_hash, role, status) VALUES (?, ?, ?, ?)',
+                (email, '', 'user', 'active'),
+            )
+            conn.commit()
+
+    update_last_session(email)
+    role = get_user_role(email)
+    user_info['role'] = role
+    user_info['is_admin'] = (role == 'admin')
+
     token = _create_jwt(user_info)
+    state = request.args.get('state', '')
+    if state == 'admin' or role == 'admin':
+        return redirect(f"{frontend_url}/admin-login?token={token}")
     return redirect(f"{frontend_url}/login?token={token}")
 
 
@@ -143,10 +163,11 @@ def credentials_login():
     if not email or not passkey:
         return jsonify({'success': False, 'error': 'Email and passkey are required.'}), 400
 
-    from ..services.user_store import verify_user, get_user_role
+    from ..services.user_store import verify_user, get_user_role, update_last_session
     if not verify_user(email, passkey):
         return jsonify({'success': False, 'error': 'Invalid email or passkey.'}), 401
 
+    update_last_session(email)
     role = get_user_role(email)
     is_admin = (role == 'admin')
     user_info = {

@@ -48,6 +48,34 @@ def create_app(config_class=Config):
     if should_log_startup:
         logger.info("Simulation process cleanup handler registered")
     
+    # Update last_session for any authenticated request (throttled: once per 5 min per user)
+    @app.before_request
+    def track_session_activity():
+        if request.method == 'OPTIONS':
+            return
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return
+        from .api.auth import verify_token
+        from .services.user_store import _connect
+        payload = verify_token(auth_header[7:])
+        if not payload or not payload.get('email'):
+            return
+        email = payload['email'].strip().lower()
+        import datetime
+        now = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+        conn = _connect()
+        try:
+            conn.execute(
+                """UPDATE users SET last_session = ?
+                   WHERE email = ?
+                   AND (last_session IS NULL OR last_session < datetime('now', '-5 minutes'))""",
+                (now, email),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
     # Request logging middleware
     @app.before_request
     def log_request():

@@ -143,7 +143,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="user in filteredUsers" :key="user.id" class="ad-table__row">
+              <tr v-for="user in filteredUsers" :key="user.id" class="ad-table__row ad-table__row--clickable" @click.stop="openUserDetail(user)">
                 <td class="ad-table__identity">
                   <div class="ad-avatar">{{ user.name.charAt(0) }}</div>
                   <div>
@@ -155,14 +155,14 @@
                   <span class="ad-badge ad-badge--role">{{ formatRole(user.role) }}</span>
                 </td>
                 <td>
-                  <span class="ad-status-pill" :class="user.status === 'active' ? 'ad-status-pill--active' : 'ad-status-pill--inactive'">
-                    <span class="ad-status-pill__dot"></span>
-                    {{ user.status.toUpperCase() }}
+                  <span class="ad-status-pill" :class="user.online ? 'ad-status-pill--active' : (user.status === 'suspended' ? 'ad-status-pill--suspended' : 'ad-status-pill--inactive')">
+                    <span class="ad-status-pill__dot" :class="{ 'ad-status-pill__dot--pulse': user.online }"></span>
+                    {{ user.online ? 'ONLINE' : (user.status === 'active' ? 'OFFLINE' : user.status.toUpperCase()) }}
                   </span>
                 </td>
                 <td class="ad-table__muted">{{ formatSession(user.last_session) }}</td>
                 <td>
-                  <button class="ad-action-btn" @click="openUserMenu(user, $event)">
+                  <button class="ad-action-btn" @click.stop="openUserMenu(user, $event)">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                       <circle cx="7" cy="2.5" r="1" fill="currentColor"/>
                       <circle cx="7" cy="7" r="1" fill="currentColor"/>
@@ -405,6 +405,60 @@
         </div>
       </main>
 
+      <!-- ── User Detail Drawer ──────────────────────────────────── -->
+      <Teleport to="body">
+        <div v-if="userDetail.open" class="ud-backdrop" @click="closeUserDetail"></div>
+        <div class="ud-drawer" :class="{ 'ud-drawer--open': userDetail.open }">
+          <div class="ud-drawer__header">
+            <div class="ud-drawer__avatar">{{ userDetail.user?.name?.charAt(0) ?? '?' }}</div>
+            <div>
+              <div class="ud-drawer__name">{{ userDetail.user?.name }}</div>
+              <div class="ud-drawer__email">{{ userDetail.user?.email }}</div>
+            </div>
+            <button class="ud-drawer__close" @click="closeUserDetail">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="ud-drawer__stat">
+            <div class="ud-drawer__stat-label">TOTAL PREDICTIONS</div>
+            <div class="ud-drawer__stat-value">{{ userDetail.total }}</div>
+          </div>
+
+          <div class="ud-drawer__section-label">PREDICTION HISTORY</div>
+
+          <div v-if="userDetail.loading" class="ud-drawer__loader">
+            <span class="ad-spinner"></span> Loading…
+          </div>
+          <div v-else-if="userDetail.predictions.length === 0" class="ud-drawer__empty">
+            No predictions yet
+          </div>
+          <table v-else class="ud-table">
+            <thead>
+              <tr>
+                <th>SIMULATION TYPE</th>
+                <th>STATUS</th>
+                <th>DATE</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in userDetail.predictions" :key="p.id">
+                <td class="ud-table__title">{{ p.title }}</td>
+                <td>
+                  <span class="ad-pred-status" :class="`ad-pred-status--${p.status}`">
+                    <span class="ad-pred-status__dot"></span>
+                    {{ p.status.toUpperCase() }}
+                  </span>
+                </td>
+                <td class="ud-table__date">{{ formatSession(p.created_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </Teleport>
+
     </div><!-- /ad-main -->
 
     <!-- Context menu for user actions -->
@@ -461,6 +515,7 @@ const stats = ref({})
 const users = ref([])
 const usersMeta = ref({ page: 1, pages: 1, total: 0 })
 const usersLoading = ref(false)
+const userDetail = ref({ open: false, user: null, loading: false, predictions: [], total: 0 })
 
 const predictions = ref([])
 const predsMeta = ref({ page: 1, pages: 1, total: 0 })
@@ -494,6 +549,19 @@ async function loadUsers(page = 1) {
   } catch { /* network error */ } finally { usersLoading.value = false }
 }
 
+async function openUserDetail(user) {
+  userDetail.value = { open: true, user, loading: true, predictions: [], total: 0 }
+  try {
+    const res  = await apiFetch(`/admin/users/${user.id}/predictions`)
+    const body = await res.json()
+    if (body.success) {
+      userDetail.value.predictions = body.data.predictions
+      userDetail.value.total       = body.data.total
+    }
+  } catch { /* silently fail */ } finally { userDetail.value.loading = false }
+}
+function closeUserDetail() { userDetail.value.open = false }
+
 async function loadPredictions(page = 1) {
   predsLoading.value = true
   try {
@@ -511,12 +579,19 @@ watch(activePage, (page) => {
   if (page === 'predictions' && predictions.value.length === 0) loadPredictions()
 })
 
+let refreshTimer = null
 onMounted(() => {
   loadStats()
   loadUsers()
   document.addEventListener('click', closeContextMenu)
+  refreshTimer = setInterval(() => {
+    if (activePage.value === 'users') loadUsers(usersMeta.value.page)
+  }, 30000)
 })
-onUnmounted(() => document.removeEventListener('click', closeContextMenu))
+onUnmounted(() => {
+  document.removeEventListener('click', closeContextMenu)
+  if (refreshTimer) clearInterval(refreshTimer)
+})
 
 // ── Filtering ─────────────────────────────────────────────────────────────
 const filteredUsers = computed(() => {
@@ -577,7 +652,8 @@ function formatRole(role) {
 }
 function formatSession(ts) {
   if (!ts) return 'Never'
-  const d = new Date(ts)
+  // Append Z so the browser treats the UTC timestamp as UTC, not local time
+  const d = new Date(ts.endsWith('Z') || ts.includes('+') ? ts : ts + 'Z')
   const diff = Date.now() - d.getTime()
   const mins = Math.floor(diff / 60000)
   if (mins < 1) return 'Just now'
@@ -944,7 +1020,10 @@ const computeBars = Array.from({ length: 12 }, (_, i) => {
 }
 .ad-status-pill--active { background: rgba(74,222,128,0.08); color: #4ade80; border: 1px solid rgba(74,222,128,0.2); }
 .ad-status-pill--inactive { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.08); }
+.ad-status-pill--suspended { background: rgba(248,113,113,0.08); color: #f87171; border: 1px solid rgba(248,113,113,0.2); }
 .ad-status-pill__dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.ad-status-pill__dot--pulse { animation: pill-pulse 1.8s ease-in-out infinite; }
+@keyframes pill-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
 /* Prediction status */
 .ad-pred-status {
@@ -1133,4 +1212,73 @@ const computeBars = Array.from({ length: 12 }, (_, i) => {
 .ad-context-menu__danger { color: #f87171 !important; }
 .ad-context-menu__danger:hover { background: rgba(248,113,113,0.08) !important; }
 .ad-context-overlay { position: fixed; inset: 0; z-index: 199; }
+.ad-table__row--clickable { cursor: pointer; }
+
+/* ── User Detail Drawer ──────────────────────────────────────────────────── */
+.ud-backdrop {
+  position: fixed; inset: 0; z-index: 299;
+  background: rgba(0,0,0,0.45); backdrop-filter: blur(2px);
+}
+.ud-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 300;
+  width: 480px; max-width: 95vw;
+  background: #0e1218;
+  border-left: 1px solid rgba(171,137,127,0.12);
+  display: flex; flex-direction: column; gap: 0;
+  transform: translateX(100%);
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+  overflow-y: auto;
+}
+.ud-drawer--open { transform: translateX(0); }
+
+.ud-drawer__header {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1.5rem 1.5rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  position: sticky; top: 0;
+  background: #0e1218; z-index: 1;
+}
+.ud-drawer__avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, #FF5A1F22, #6C8EFF22);
+  border: 1px solid rgba(255,90,31,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; font-weight: 700; color: #FF5A1F;
+  flex-shrink: 0;
+}
+.ud-drawer__name { font-weight: 700; color: #E0E2EA; font-size: 0.95rem; }
+.ud-drawer__email { font-size: 0.7rem; color: rgba(255,255,255,0.35); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+.ud-drawer__close {
+  margin-left: auto; background: none; border: none;
+  color: rgba(255,255,255,0.3); cursor: pointer; padding: 0.25rem;
+  transition: color 0.15s;
+}
+.ud-drawer__close:hover { color: #E0E2EA; }
+
+.ud-drawer__stat {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.ud-drawer__stat-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; color: rgba(255,255,255,0.3); font-family: 'JetBrains Mono', monospace; }
+.ud-drawer__stat-value { font-size: 2rem; font-weight: 700; color: #E0E2EA; margin-top: 0.25rem; }
+
+.ud-drawer__section-label {
+  padding: 1rem 1.5rem 0.5rem;
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.3); font-family: 'JetBrains Mono', monospace;
+}
+.ud-drawer__loader { padding: 2rem 1.5rem; color: rgba(255,255,255,0.35); display: flex; align-items: center; gap: 0.75rem; }
+.ud-drawer__empty { padding: 2rem 1.5rem; color: rgba(255,255,255,0.25); font-style: italic; font-size: 0.875rem; }
+
+.ud-table { width: 100%; border-collapse: collapse; }
+.ud-table th {
+  padding: 0.6rem 1.5rem; text-align: left;
+  font-size: 0.575rem; font-weight: 700; letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.3); font-family: 'JetBrains Mono', monospace;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.ud-table td { padding: 0.85rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+.ud-table tr:last-child td { border-bottom: none; }
+.ud-table__title { font-size: 0.825rem; color: #C8CAD4; font-weight: 500; max-width: 220px; }
+.ud-table__date { font-size: 0.75rem; color: rgba(255,255,255,0.35); font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
 </style>
