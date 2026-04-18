@@ -27,6 +27,19 @@ def _record_prediction(report, user_email: str):
         db_path = os.path.join(os.path.dirname(__file__), '../../uploads/users.db')
         conn = sqlite3.connect(db_path)
         try:
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS predictions (
+                    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id         INTEGER NOT NULL,
+                    simulation_type TEXT NOT NULL DEFAULT 'GraphRAG Analysis',
+                    status          TEXT NOT NULL DEFAULT 'completed',
+                    accuracy        REAL,
+                    title           TEXT,
+                    report_id       TEXT,
+                    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(user_id) REFERENCES users(id)
+                )
+            ''')
             row = conn.execute('SELECT id FROM users WHERE email = ?', (user_email.lower(),)).fetchone()
             if not row:
                 return

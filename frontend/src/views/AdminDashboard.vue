@@ -432,6 +432,9 @@
           <div v-if="userDetail.loading" class="ud-drawer__loader">
             <span class="ad-spinner"></span> Loading…
           </div>
+          <div v-else-if="userDetail.error" class="ud-drawer__empty" style="color:#ff5a1f">
+            Error: {{ userDetail.error }}
+          </div>
           <div v-else-if="userDetail.predictions.length === 0" class="ud-drawer__empty">
             No predictions yet
           </div>
@@ -515,7 +518,7 @@ const stats = ref({})
 const users = ref([])
 const usersMeta = ref({ page: 1, pages: 1, total: 0 })
 const usersLoading = ref(false)
-const userDetail = ref({ open: false, user: null, loading: false, predictions: [], total: 0 })
+const userDetail = ref({ open: false, user: null, loading: false, predictions: [], total: 0, error: null })
 
 const predictions = ref([])
 const predsMeta = ref({ page: 1, pages: 1, total: 0 })
@@ -550,15 +553,21 @@ async function loadUsers(page = 1) {
 }
 
 async function openUserDetail(user) {
-  userDetail.value = { open: true, user, loading: true, predictions: [], total: 0 }
+  userDetail.value = { open: true, user, loading: true, predictions: [], total: 0, error: null }
   try {
     const res  = await apiFetch(`/admin/users/${user.id}/predictions`)
     const body = await res.json()
     if (body.success) {
       userDetail.value.predictions = body.data.predictions
       userDetail.value.total       = body.data.total
+    } else {
+      userDetail.value.error = body.error || 'Failed to load predictions'
+      console.error('[UserDetail] API error:', body)
     }
-  } catch { /* silently fail */ } finally { userDetail.value.loading = false }
+  } catch (e) {
+    userDetail.value.error = e.message || 'Network error'
+    console.error('[UserDetail] fetch error:', e)
+  } finally { userDetail.value.loading = false }
 }
 function closeUserDetail() { userDetail.value.open = false }
 
