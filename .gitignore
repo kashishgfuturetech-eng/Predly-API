@@ -2,6 +2,9 @@
 .DS_Store
 Thumbs.db
 
+# Admin utilities
+reset_admin.py
+
 # 环境变量（保护敏感信息）
 .env
 .env.local
