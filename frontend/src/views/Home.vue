@@ -14,9 +14,7 @@
           <span class="landing__logo-dot"></span>Predly
         </div>
         <nav class="landing__nav">
-          <a class="landing__nav-link landing__nav-link--active font-mono" href="#">Simulations</a>
-          <a class="landing__nav-link font-mono" href="#">Solutions</a>
-          <a class="landing__nav-link font-mono" href="#" @click.prevent="router.push({ name: 'CaseStudies' })">Casestudies</a>
+          <a class="landing__nav-link font-mono" href="#" @click.prevent="router.push({ name: 'CaseStudies' })">Case Studies</a>
         </nav>
         <button class="landing__inquiry-btn font-headline">Inquiry</button>
       </div>

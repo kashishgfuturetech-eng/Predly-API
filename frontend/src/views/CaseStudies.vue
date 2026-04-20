@@ -11,8 +11,7 @@
           <span class="cs__logo-dot"></span>Predly
         </div>
         <nav class="cs__nav">
-          <a class="cs__nav-link font-mono" @click="goHome" href="#">Simulations</a>
-          <a class="cs__nav-link font-mono" href="#">Solutions</a>
+          <a class="cs__nav-link font-mono" @click.prevent="goHome" href="#">Simulations</a>
           <a class="cs__nav-link cs__nav-link--active font-mono" href="#">Case Studies</a>
         </nav>
         <button class="cs__inquiry-btn font-headline" @click="goHome">Inquiry</button>

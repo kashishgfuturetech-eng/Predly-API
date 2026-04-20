@@ -31,12 +31,12 @@ const routes = [
   },
   // ── Admin ────────────────────────────────────────
   {
-    path: '/admin/login',
+    path: '/admin-panel',
     name: 'AdminLogin',
     component: AdminLoginView,
   },
   {
-    path: '/admin',
+    path: '/admin-panel/dashboard',
     name: 'AdminDashboard',
     component: AdminDashboard,
     meta: { requiresAuth: true, requiresAdmin: true },
