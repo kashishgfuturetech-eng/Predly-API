@@ -78,13 +78,7 @@
           <button class="gb-canvas-topbar__icon-btn" title="Notifications">
             <span class="material-symbols-outlined" style="font-size:20px">notifications</span>
           </button>
-          <button
-            class="gb-canvas-topbar__deploy-btn"
-            :disabled="!canDeploy"
-            @click="startBuild"
-          >
-            {{ currentPhase === 2 ? 'Deploy Agent' : 'Build Graph' }}
-          </button>
+
         </div>
       </div>
 
@@ -1265,28 +1259,6 @@ onMounted(() => {
 }
 .gb-canvas-topbar__icon-btn:hover { border-color: rgba(171,137,127,0.3); color: var(--text-secondary); }
 
-.gb-canvas-topbar__deploy-btn {
-  padding: 0.5rem 1.125rem;
-  background: linear-gradient(135deg, #FF5A1F, #FF8C5A);
-  border: none;
-  border-radius: var(--radius-md);
-  color: white;
-  font-family: var(--font-headline);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-  box-shadow: 0 2px 10px rgba(255,90,31,0.3);
-}
-.gb-canvas-topbar__deploy-btn:hover:not(:disabled) {
-  box-shadow: 0 4px 18px rgba(255,90,31,0.45);
-}
-.gb-canvas-topbar__deploy-btn:disabled {
-  background: var(--surface-container-high);
-  color: var(--text-muted);
-  box-shadow: none;
-  cursor: not-allowed;
-}
 
 /* Canvas */
 .gb-canvas {
