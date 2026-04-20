@@ -183,6 +183,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { getToken } from '../auth.js'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 // simulationId: Required — the sim_xxxx from Step 3
@@ -241,7 +242,14 @@ const timelineSteps = computed(() => [
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
 async function apiFetch(url, options = {}) {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...options })
+  const token = getToken()
+  const res = await fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+    ...options,
+  })
   const json = await res.json().catch(() => ({ error: res.statusText }))
   if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
   return json

@@ -31,13 +31,21 @@ export function getUser() {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]))
     return {
-      email: payload.email,
-      name: payload.name,
-      picture: payload.picture,
+      email:    payload.email,
+      name:     payload.name,
+      picture:  payload.picture,
+      is_admin: payload.is_admin || false,
+      role:     payload.role || 'user',
     }
   } catch {
     return null
   }
+}
+
+/** Returns true if the current JWT carries the admin flag. */
+export function isAdmin() {
+  const user = getUser()
+  return user ? user.is_admin === true : false
 }
 
 export function setPendingProject(projectId) {

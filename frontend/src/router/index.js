@@ -3,13 +3,21 @@ import Home from '../views/Home.vue'
 import PromptView from '../views/PromptView.vue'
 import MainView from '../views/MainView.vue'
 import LoginView from '../views/LoginView.vue'
-import { isAuthenticated, setRedirectAfterLogin } from '../auth.js'
+import AdminLoginView from '../views/AdminLoginView.vue'
+import AdminDashboard from '../views/AdminDashboard.vue'
+import CaseStudies from '../views/CaseStudies.vue'
+import { isAuthenticated, isAdmin, setRedirectAfterLogin } from '../auth.js'
 
 const routes = [
   {
     path: '/',
     name: 'Home',
     component: Home,
+  },
+  {
+    path: '/casestudies',
+    name: 'CaseStudies',
+    component: CaseStudies,
   },
   {
     path: '/prompt',
@@ -21,6 +29,19 @@ const routes = [
     name: 'Login',
     component: LoginView,
   },
+  // ── Admin ────────────────────────────────────────
+  {
+    path: '/admin-panel',
+    name: 'AdminLogin',
+    component: AdminLoginView,
+  },
+  {
+    path: '/admin-panel/dashboard',
+    name: 'AdminDashboard',
+    component: AdminDashboard,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  // ── User app ─────────────────────────────────────
   {
     path: '/main/:projectId',
     name: 'Main',
@@ -38,10 +59,14 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
   if (to.meta.requiresAuth && !isAuthenticated()) {
     setRedirectAfterLogin(to.fullPath)
-    next({ name: 'Login' })
-  } else {
-    next()
+    next({ name: to.meta.requiresAdmin ? 'AdminLogin' : 'Login' })
+    return
   }
+  if (to.meta.requiresAdmin && !isAdmin()) {
+    next({ name: 'AdminLogin' })
+    return
+  }
+  next()
 })
 
 export default router

@@ -18,9 +18,22 @@ def _connect() -> sqlite3.Connection:
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
             email         TEXT UNIQUE NOT NULL,
             passkey_hash  TEXT NOT NULL,
+            role          TEXT NOT NULL DEFAULT 'user',
+            status        TEXT NOT NULL DEFAULT 'active',
+            last_session  TIMESTAMP,
             created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    # Idempotent column additions for older schemas
+    for col, defn in [
+        ('role',         "TEXT NOT NULL DEFAULT 'user'"),
+        ('status',       "TEXT NOT NULL DEFAULT 'active'"),
+        ('last_session', 'TIMESTAMP'),
+    ]:
+        try:
+            conn.execute(f'ALTER TABLE users ADD COLUMN {col} {defn}')
+        except sqlite3.OperationalError:
+            pass
     conn.commit()
     return conn
 
@@ -60,3 +73,36 @@ def email_exists(email: str) -> bool:
             'SELECT 1 FROM users WHERE email = ?', (normalized,)
         ).fetchone()
     return row is not None
+
+
+def get_user_role(email: str) -> str:
+    """Return the role string for a user, defaulting to 'user'."""
+    normalized = email.lower().strip()
+    with _connect() as conn:
+        row = conn.execute(
+            'SELECT role FROM users WHERE email = ?', (normalized,)
+        ).fetchone()
+    return row[0] if row else 'user'
+
+
+def set_user_role(email: str, role: str) -> bool:
+    """Promote / demote a user's role. Returns True on success."""
+    normalized = email.lower().strip()
+    with _connect() as conn:
+        cur = conn.execute(
+            'UPDATE users SET role = ? WHERE email = ?', (role, normalized)
+        )
+    return cur.rowcount > 0
+
+
+def update_last_session(email: str):
+    """Stamp the last_session timestamp for a user."""
+    import datetime
+    normalized = email.lower().strip()
+    now = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+    conn = _connect()
+    try:
+        conn.execute('UPDATE users SET last_session = ? WHERE email = ?', (now, normalized))
+        conn.commit()
+    finally:
+        conn.close()
