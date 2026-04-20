@@ -347,6 +347,9 @@ function removeChip(i) { contextChips.value.splice(i, 1) }
 
 function renderContent(text) {
   return text
+    .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/`(.*?)`/g, '<code class="interact-code">$1</code>')
@@ -694,6 +697,24 @@ function renderContent(text) {
 :deep(.interact__message--assistant .interact__message-content strong) {
   color: var(--text-primary);
   font-weight: 700;
+}
+:deep(.interact__message-content h2) {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0.75rem 0 0.25rem;
+}
+:deep(.interact__message-content h3) {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0.5rem 0 0.2rem;
+}
+:deep(.interact__message-content h4) {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0.4rem 0 0.15rem;
 }
 
 @media (max-width: 1100px) {
