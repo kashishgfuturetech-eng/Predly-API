@@ -5,6 +5,7 @@ import MainView from '../views/MainView.vue'
 import LoginView from '../views/LoginView.vue'
 import AdminLoginView from '../views/AdminLoginView.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
+import CaseStudies from '../views/CaseStudies.vue'
 import { isAuthenticated, isAdmin, setRedirectAfterLogin } from '../auth.js'
 
 const routes = [
@@ -12,6 +13,11 @@ const routes = [
     path: '/',
     name: 'Home',
     component: Home,
+  },
+  {
+    path: '/casestudies',
+    name: 'CaseStudies',
+    component: CaseStudies,
   },
   {
     path: '/prompt',

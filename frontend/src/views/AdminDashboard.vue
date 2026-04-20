@@ -79,6 +79,14 @@
               {{ (currentUser?.name || 'A').charAt(0).toUpperCase() }}
             </div>
           </div>
+          <button class="ad-topbar__logout-btn" @click="handleLogout" title="Sign out">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <path d="M6 13H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              <path d="M10 10l3-2.5L10 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M13 7.5H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+            Sign Out
+          </button>
         </div>
       </header>
 
@@ -136,7 +144,7 @@
             <thead>
               <tr>
                 <th>IDENTITY</th>
-                <th>ROLE</th>
+                <th>PREDICTIONS</th>
                 <th>STATUS</th>
                 <th>LAST SESSION</th>
                 <th>ACTIONS</th>
@@ -152,7 +160,8 @@
                   </div>
                 </td>
                 <td>
-                  <span class="ad-badge ad-badge--role">{{ formatRole(user.role) }}</span>
+                  <span v-if="userPredCounts[user.id] == null" class="ad-pred-count-loading">—</span>
+                  <span v-else class="ad-pred-count">{{ userPredCounts[user.id] }}</span>
                 </td>
                 <td>
                   <span class="ad-status-pill" :class="user.online ? 'ad-status-pill--active' : (user.status === 'suspended' ? 'ad-status-pill--suspended' : 'ad-status-pill--inactive')">
@@ -523,6 +532,7 @@ const userDetail = ref({ open: false, user: null, loading: false, predictions: [
 const predictions = ref([])
 const predsMeta = ref({ page: 1, pages: 1, total: 0 })
 const predsLoading = ref(false)
+const userPredCounts = ref({})
 
 async function apiFetch(path, opts = {}) {
   const token = getToken()
@@ -548,8 +558,20 @@ async function loadUsers(page = 1) {
     if (body.success) {
       users.value    = body.data.users
       usersMeta.value = { page: body.data.page, pages: body.data.pages, total: body.data.total }
+      loadUserPredCounts(body.data.users)
     }
   } catch { /* network error */ } finally { usersLoading.value = false }
+}
+
+async function loadUserPredCounts(userList) {
+  await Promise.all(userList.map(async (u) => {
+    if (userPredCounts.value[u.id] != null) return
+    try {
+      const res  = await apiFetch(`/admin/users/${u.id}/predictions`)
+      const body = await res.json()
+      if (body.success) userPredCounts.value = { ...userPredCounts.value, [u.id]: body.data.total }
+    } catch { /* silently skip */ }
+  }))
 }
 
 async function openUserDetail(user) {
@@ -604,11 +626,14 @@ onUnmounted(() => {
 
 // ── Filtering ─────────────────────────────────────────────────────────────
 const filteredUsers = computed(() => {
-  if (!searchQuery.value) return users.value
-  const q = searchQuery.value.toLowerCase()
-  return users.value.filter(u =>
-    u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.role.includes(q)
-  )
+  const list = searchQuery.value
+    ? users.value.filter(u =>
+        u.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        u.role.includes(searchQuery.value.toLowerCase())
+      )
+    : users.value
+  return [...list].sort((a, b) => (b.online ? 1 : 0) - (a.online ? 1 : 0))
 })
 const filteredPredictions = computed(() => {
   if (!searchQuery.value) return predictions.value
@@ -898,6 +923,23 @@ const computeBars = Array.from({ length: 12 }, (_, i) => {
   font-size: 0.875rem;
   color: #fff;
 }
+.ad-topbar__logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.875rem;
+  background: rgba(248,113,113,0.07);
+  border: 1px solid rgba(248,113,113,0.2);
+  border-radius: 8px;
+  color: #f87171;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.ad-topbar__logout-btn:hover { background: rgba(248,113,113,0.14); border-color: rgba(248,113,113,0.35); }
 
 /* ── Content ───────────────────────────────────────────────────────────── */
 .ad-content { padding: 2rem; flex: 1; }
@@ -1222,6 +1264,17 @@ const computeBars = Array.from({ length: 12 }, (_, i) => {
 .ad-context-menu__danger:hover { background: rgba(248,113,113,0.08) !important; }
 .ad-context-overlay { position: fixed; inset: 0; z-index: 199; }
 .ad-table__row--clickable { cursor: pointer; }
+.ad-pred-count {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #FF8C5A;
+  font-family: 'JetBrains Mono', monospace;
+}
+.ad-pred-count-loading {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.2);
+  font-family: 'JetBrains Mono', monospace;
+}
 
 /* ── User Detail Drawer ──────────────────────────────────────────────────── */
 .ud-backdrop {
