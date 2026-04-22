@@ -91,6 +91,10 @@ def create_app(config_class=Config):
     def log_response(response):
         logger = get_logger('predly.request')
         logger.debug(f"Response: {response.status_code}")
+        # Force CORS headers on every response including errors
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
         return response
     
     # Register blueprints

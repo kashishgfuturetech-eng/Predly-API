@@ -467,8 +467,8 @@ async function startSimulation() {
     redditTimer  = setInterval(() => { redditElapsed.value  = formatElapsed(redditStart)  }, 1000)
 
     // Start polling
-    pollTimer       = setInterval(pollRunStatus, 3000)
-    actionPollTimer = setInterval(pollActions,   5001)
+    pollTimer       = setInterval(pollRunStatus, 10000)
+    actionPollTimer = setInterval(pollActions,   15000)
 
     // Immediate first poll
     pollRunStatus()
