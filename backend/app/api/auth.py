@@ -66,7 +66,8 @@ def google_callback():
 
     client_id = current_app.config.get('GOOGLE_CLIENT_ID', '')
     client_secret = current_app.config.get('GOOGLE_CLIENT_SECRET', '')
-    callback_url = request.host_url.rstrip('/') + '/api/auth/google/callback'
+    backend_url = current_app.config.get('BACKEND_URL', request.host_url.rstrip('/'))
+    callback_url = backend_url + '/api/auth/google/callback'
 
     token_resp = requests.post(GOOGLE_TOKEN_URL, data={
         'code': code,
