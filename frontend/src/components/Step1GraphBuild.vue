@@ -296,6 +296,58 @@
       <div class="gb-config__header">
         <span class="gb-config__header-label label-sm" style="letter-spacing:0.12em;color:var(--text-muted)">CONFIGURATION PANEL</span>
         <h2 class="gb-config__title font-headline">Build Engine</h2>
+
+        <!-- Mode Toggle -->
+        <div class="gb-config__mode-toggle">
+          <button
+            class="gb-config__mode-btn"
+            :class="{ 'gb-config__mode-btn--active': !autoMode }"
+            @click="autoMode = false"
+          >
+            <span class="material-symbols-outlined" style="font-size:13px">tune</span>
+            Manual
+          </button>
+          <button
+            class="gb-config__mode-btn"
+            :class="{ 'gb-config__mode-btn--active': autoMode }"
+            @click="autoMode = true"
+          >
+            <span class="material-symbols-outlined" style="font-size:13px">auto_mode</span>
+            Auto
+          </button>
+        </div>
+
+        <!-- Auto mode info -->
+        <div v-if="autoMode" class="gb-config__auto-info">
+          <span class="material-symbols-outlined" style="font-size:13px;color:var(--primary);flex-shrink:0">info</span>
+          <span style="font-size:0.6875rem;color:var(--text-muted);line-height:1.5">All steps will run automatically and navigate to the report when complete.</span>
+        </div>
+
+        <!-- Top action button -->
+        <button
+          v-if="isProcessing"
+          class="gb-config__stop-btn gb-config__stop-btn--top"
+          @click="stopBuild"
+        >
+          STOP BUILD ENGINE
+          <span class="material-symbols-outlined" style="font-size:16px">close</span>
+        </button>
+        <button
+          v-else-if="currentPhase === 2"
+          class="gb-config__proceed-btn gb-config__proceed-btn--top"
+          @click="proceedToEnv"
+        >
+          PROCEED TO ENV SETUP
+          <span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span>
+        </button>
+        <button
+          v-else-if="!isProcessing && currentPhase === 1"
+          class="gb-config__start-btn gb-config__start-btn--top"
+          @click="startBuild"
+        >
+          START BUILD ENGINE
+          <span class="material-symbols-outlined" style="font-size:16px">bolt</span>
+        </button>
       </div>
 
       <!-- Build phases -->
@@ -392,32 +444,12 @@
         {{ phaseError }}
       </div>
 
-      <!-- Stop / Proceed buttons -->
+      <!-- Stop / Proceed buttons (duplicate at bottom for convenience) -->
       <div class="gb-config__actions">
-        <button
-          v-if="isProcessing"
-          class="gb-config__stop-btn"
-          @click="stopBuild"
-        >
-          STOP BUILD ENGINE
-          <span class="material-symbols-outlined" style="font-size:16px">close</span>
-        </button>
-        <button
-          v-else-if="currentPhase === 2"
-          class="gb-config__proceed-btn"
-          @click="proceedToEnv"
-        >
-          PROCEED TO ENV SETUP
-          <span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span>
-        </button>
-        <button
-          v-else-if="!isProcessing && currentPhase === 1"
-          class="gb-config__start-btn"
-          @click="startBuild"
-        >
-          START BUILD ENGINE
-          <span class="material-symbols-outlined" style="font-size:16px">bolt</span>
-        </button>
+        <div v-if="!autoMode && !isProcessing && currentPhase === 1" class="gb-config__scroll-hint">
+          <span class="material-symbols-outlined" style="font-size:14px;color:var(--primary)">keyboard_double_arrow_up</span>
+          <span style="font-size:0.6875rem;color:var(--text-muted)">Button also available at the top of this panel</span>
+        </div>
       </div>
     </aside>
 
@@ -431,6 +463,7 @@ const props = defineProps({ projectData: Object })
 const emit = defineEmits(['completed'])
 
 // ── State ──────────────────────────────────────────────────────────────────
+const autoMode = ref(false)
 const currentPhase = ref(1)   // 1 = ready to build, 2 = build complete
 const builtGraphId = ref(null) // stores the real graph_id returned by the backend
 const isProcessing = ref(false)
@@ -970,6 +1003,13 @@ async function startBuild() {
       await fetchGraphData(graphId)
     }
 
+    // Auto mode: proceed automatically to next step
+    if (autoMode.value) {
+      addLog('Auto mode: proceeding to Env Setup...', 'system')
+      await new Promise(r => setTimeout(r, 1200))
+      proceedToEnv()
+    }
+
   } catch (err) {
     if (!stopped) {
       phaseError.value = err.message
@@ -1034,6 +1074,7 @@ function proceedToEnv() {
   emit('completed', {
     graph_id: builtGraphId.value,
     ontology: props.projectData?.ontology ?? { entity_types: [], edge_types: [] },
+    autoMode: autoMode.value,
   })
 }
 
@@ -1628,7 +1669,7 @@ onMounted(() => {
   overflow-y: auto;
 }
 
-.gb-config__header { display: flex; flex-direction: column; gap: 0.25rem; }
+.gb-config__header { display: flex; flex-direction: column; gap: 0.75rem; }
 .gb-config__title {
   font-size: 1.75rem;
   font-weight: 800;
@@ -1788,8 +1829,102 @@ onMounted(() => {
   font-size: 0.75rem;
 }
 
-/* Action buttons */
-.gb-config__actions { display: flex; flex-direction: column; gap: 0.5rem; }
+/* Mode toggle */
+.gb-config__mode-toggle {
+  display: flex;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(171,137,127,0.15);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 3px;
+}
+.gb-config__mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: calc(var(--radius-md) - 2px);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-headline);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.gb-config__mode-btn--active {
+  background: rgba(255, 90, 31, 0.15);
+  color: var(--primary);
+  border: 1px solid rgba(255, 90, 31, 0.25);
+}
+.gb-config__mode-btn:hover:not(.gb-config__mode-btn--active) {
+  color: var(--text-secondary);
+  background: rgba(255,255,255,0.04);
+}
+
+/* Auto info strip */
+.gb-config__auto-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: rgba(255, 90, 31, 0.04);
+  border: 1px solid rgba(255, 90, 31, 0.12);
+  border-radius: var(--radius-md);
+}
+
+/* Top button variants (same styles, just positioned inside header) */
+.gb-config__stop-btn--top,
+.gb-config__proceed-btn--top,
+.gb-config__start-btn--top {
+  width: 100%;
+  padding: 0.875rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-family: var(--font-headline);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.15s;
+  border: none;
+}
+.gb-config__stop-btn--top {
+  background: rgba(171, 137, 127, 0.08);
+  border: 1px solid rgba(171, 137, 127, 0.2);
+  color: var(--text-secondary);
+}
+.gb-config__stop-btn--top:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239,68,68,0.25);
+  color: #f87171;
+}
+.gb-config__start-btn--top {
+  background: rgba(255, 181, 158, 0.06);
+  border: 1px solid rgba(255, 90, 31, 0.25);
+  color: var(--primary);
+}
+.gb-config__start-btn--top:hover {
+  background: rgba(255, 90, 31, 0.1);
+  border-color: rgba(255, 90, 31, 0.45);
+}
+.gb-config__proceed-btn--top {
+  background: linear-gradient(135deg, #FF5A1F, #FF8C5A);
+  color: white;
+  box-shadow: 0 2px 12px rgba(255, 90, 31, 0.3);
+}
+.gb-config__proceed-btn--top:hover {
+  box-shadow: 0 4px 20px rgba(255, 90, 31, 0.45);
+}
+
+/* Mode toggle */
 
 .gb-config__stop-btn,
 .gb-config__proceed-btn,
@@ -1838,5 +1973,15 @@ onMounted(() => {
 }
 .gb-config__proceed-btn:hover {
   box-shadow: 0 4px 20px rgba(255, 90, 31, 0.45);
+}
+
+.gb-config__scroll-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  background: rgba(255, 90, 31, 0.04);
+  border: 1px dashed rgba(255, 90, 31, 0.2);
+  border-radius: var(--radius-md);
 }
 </style>

@@ -228,7 +228,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onUnmounted, onMounted, nextTick } from 'vue'
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 // simulationId: The sim_xxxx ID returned by Step 2's /api/simulation/create
@@ -237,6 +237,7 @@ const props = defineProps({
   simulationId: String,
   projectId: String,
   maxRounds: { type: Number, default: 100 },
+  autoMode: { type: Boolean, default: false },
 })
 const emit = defineEmits(['completed'])
 
@@ -503,7 +504,17 @@ function markCompleted() {
   agentGrid.value.forEach(a => { a.status = 'done' })
   // Final action fetch
   pollActions()
+  // Auto mode: emit completed automatically
+  if (props.autoMode) {
+    setTimeout(() => emit('completed'), 1500)
+  }
 }
+
+onMounted(() => {
+  if (props.autoMode) {
+    setTimeout(() => startSimulation(), 800)
+  }
+})
 
 function clearPolling() {
   clearInterval(pollTimer)

@@ -38,6 +38,7 @@
             :simulation-id="projectData.simulation_id || null"
             :project-id="projectData.project_id"
             :max-rounds="projectData.max_rounds"
+            :auto-mode="globalAutoMode"
             @completed="onStepCompleted('simulation', {})"
           />
 
@@ -45,6 +46,7 @@
             v-else-if="currentStep === 'report'"
             :simulation-id="projectData.simulation_id || null"
             :report-id="projectData.report_id || 'REF-PENDING'"
+            :auto-mode="globalAutoMode"
             @completed="onStepCompleted('report', $event)"
           />
 
@@ -81,6 +83,7 @@ const router = useRouter()
 
 const currentStep = ref('graph')
 const completedSteps = ref([])
+const globalAutoMode = ref(false)
 
 const projectData = ref({
   project_id:    props.projectId || null,
@@ -89,6 +92,7 @@ const projectData = ref({
   report_id:     null,
   ontology:      null,
   max_rounds:    100,
+  autoMode:      false,
 })
 
 const stepOrder = ['graph', 'env', 'simulation', 'report', 'interaction']
@@ -128,7 +132,11 @@ function navigateTo(step) {
 
 function onStepCompleted(step, data) {
   if (!completedSteps.value.includes(step)) completedSteps.value.push(step)
-  if (data) Object.assign(projectData.value, data)
+  if (data) {
+    if (data.autoMode !== undefined) globalAutoMode.value = data.autoMode
+    Object.assign(projectData.value, data)
+    projectData.value.autoMode = globalAutoMode.value
+  }
   const next = stepOrder[stepOrder.indexOf(step) + 1]
   if (next) currentStep.value = next
 }

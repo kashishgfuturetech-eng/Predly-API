@@ -1,5 +1,11 @@
 <template>
   <div class="report">
+    <!-- Auto-mode banner -->
+    <div v-if="autoMode" class="report__auto-banner">
+      <span class="report__auto-dot"></span>
+      <span><strong style="color:var(--primary)">Auto Mode</strong> — Report is generating automatically. Click <strong style="color:var(--text-primary)">Open Interaction</strong> when it's ready.</span>
+    </div>
+
     <!-- Top action bar -->
     <div class="report__topbar">
       <div>
@@ -191,6 +197,7 @@ import { getToken } from '../auth.js'
 const props = defineProps({
   simulationId: String,
   reportId: { type: String, default: 'REF-PENDING' },
+  autoMode: { type: Boolean, default: false },
 })
 const emit = defineEmits(['completed'])
 
@@ -416,7 +423,7 @@ async function pollSections(reportId) {
       isComplete.value = true
       isGenerating.value = false
       fetchTokenCount(reportId)
-      // Do NOT emit('completed') here — the "Open Interaction" button handles navigation
+      // Manual mode: the "Open Interaction" button handles navigation
     }
   } catch (e) {
     console.warn('pollSections error:', e.message)
@@ -513,10 +520,37 @@ function clearTimers() {
 }
 
 onUnmounted(clearTimers)
+
+onMounted(() => {
+  if (props.autoMode) {
+    setTimeout(() => beginReport(), 800)
+  }
+})
 </script>
 
 <style scoped>
 .report { display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* Auto-mode banner */
+.report__auto-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 1rem;
+  background: rgba(255, 90, 31, 0.05);
+  border: 1px solid rgba(255, 90, 31, 0.15);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.report__auto-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+  animation: dot-blink 1.2s step-end infinite;
+}
+@keyframes dot-blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
 .report__topbar {
   display: flex;

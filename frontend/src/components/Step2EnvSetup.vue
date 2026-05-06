@@ -1,5 +1,11 @@
 <template>
   <div class="env-setup">
+    <!-- Auto-mode banner -->
+    <div v-if="autoMode" class="env-setup__auto-banner">
+      <span class="env-setup__auto-dot"></span>
+      <span><strong style="color:var(--primary)">Auto Mode Active</strong> — All steps are running automatically. No action needed.</span>
+    </div>
+
     <!-- Quick Stats -->
     <div class="env-setup__stats">
       <div class="env-setup__stat card" v-for="s in quickStats" :key="s.label">
@@ -46,7 +52,7 @@
         {{ phaseError[0] }}
       </div>
 
-      <div v-if="phase === 0 && !isProcessing" class="env-setup__cta">
+      <div v-if="phase === 0 && !isProcessing" class="env-setup__cta" ref="phase0Ref">
         <button class="btn-primary" @click="initSimulation">
           <span class="material-symbols-outlined" style="font-size:18px">play_circle</span>
           Initialize Instance
@@ -107,7 +113,7 @@
         {{ phaseError[1] }}
       </div>
 
-      <div v-if="phase === 1 && !isProcessing" class="env-setup__cta">
+      <div v-if="phase === 1 && !isProcessing" class="env-setup__cta" ref="phase1Ref">
         <button class="btn-primary" @click="previewEntities">
           <span class="material-symbols-outlined" style="font-size:18px">hub</span>
           Scan Graph Entities
@@ -267,7 +273,7 @@
         {{ phaseError[2] }}
       </div>
 
-      <div v-if="phase === 2 && !isGenerating" class="env-setup__cta">
+      <div v-if="phase === 2 && !isGenerating" class="env-setup__cta" ref="phase2Ref">
         <button class="btn-primary" @click="saveAndGenerate" :disabled="isProcessing">
           <span class="material-symbols-outlined" style="font-size:18px">rocket_launch</span>
           {{ isProcessing ? 'Saving…' : 'Save & Generate Agents' }}
@@ -275,28 +281,38 @@
       </div>
 
       <!-- Final -->
-      <div v-if="phase > 2" class="env-setup__complete">
+      <div v-if="phase > 2" class="env-setup__complete" ref="phase3Ref">
         <div class="chip chip-green">
           <span class="material-symbols-outlined" style="font-size:14px">check_circle</span>
           Env Setup Complete — {{ profiles.length }} agents ready
         </div>
-        <button class="btn-primary" @click="$emit('completed', { simulation_id: simulationId, max_rounds: parseInt(simConfig.rounds) })">
+        <button
+          v-if="!autoMode"
+          class="btn-primary env-setup__launch-btn"
+          @click="$emit('completed', { simulation_id: simulationId, max_rounds: parseInt(simConfig.rounds) })"
+        >
           Launch Simulation
           <span class="material-symbols-outlined" style="font-size:18px">rocket_launch</span>
         </button>
+        <div v-else class="ai-chip">
+          <span class="ai-chip-dot"></span>
+          <span class="label-sm" style="color:var(--secondary)">Proceeding to Simulation…</span>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { createSimulation, prepareSimulation, configureSimulation } from '../api.js'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10000/api'
 
 const props = defineProps({ projectData: Object })
 const emit = defineEmits(['completed'])
+
+const autoMode = computed(() => !!props.projectData?.autoMode)
 
 const phase        = ref(0)
 const isProcessing = ref(false)
@@ -306,6 +322,26 @@ const profiles     = ref([])
 const statusMsg    = ref('')
 const genProgress  = ref(0)
 const phaseError   = ref({ 0: '', 1: '', 2: '' })
+
+// Refs for auto-scroll targets
+const phase0Ref = ref(null)
+const phase1Ref = ref(null)
+const phase2Ref = ref(null)
+const phase3Ref = ref(null)
+
+function scrollToNextButton(phaseIdx) {
+  if (autoMode.value) return
+  const refs = [phase0Ref, phase1Ref, phase2Ref, phase3Ref]
+  nextTick(() => {
+    const el = refs[phaseIdx]?.value
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // Add a brief highlight flash so user notices the button
+      el.classList.add('env-setup__cta--highlight')
+      setTimeout(() => el.classList.remove('env-setup__cta--highlight'), 1800)
+    }
+  })
+}
 
 const entityPreview = ref([])
 const totalEntities = ref(0)
@@ -385,6 +421,13 @@ async function initSimulation() {
     if (!res.success) throw new Error(res.error || 'Simulation create failed')
     simulationId.value = res.data?.simulation_id || res.data?.id
     phase.value = 1
+    // In manual mode: scroll to next button. In auto mode: trigger next step.
+    if (autoMode.value) {
+      await new Promise(r => setTimeout(r, 600))
+      await previewEntities()
+    } else {
+      scrollToNextButton(1)
+    }
   } catch (err) {
     phaseError.value[0] = err.message
   } finally {
@@ -428,6 +471,12 @@ async function previewEntities() {
     simConfig.value.agentCount = String(totalEntities.value)
 
     phase.value = 2
+    if (autoMode.value) {
+      await new Promise(r => setTimeout(r, 600))
+      await saveAndGenerate()
+    } else {
+      scrollToNextButton(2)
+    }
   } catch (err) {
     phaseError.value[1] = err.message
   } finally {
@@ -477,6 +526,10 @@ async function saveAndGenerate() {
     if (prepRes.data?.already_prepared && !prepRes.data?.task_id) {
       await loadProfiles()
       phase.value = 3
+      if (autoMode.value) {
+        await new Promise(r => setTimeout(r, 1000))
+        emit('completed', { simulation_id: simulationId.value, max_rounds: parseInt(simConfig.value.rounds) })
+      }
       return
     }
 
@@ -487,6 +540,12 @@ async function saveAndGenerate() {
 
     await loadProfiles()
     phase.value = 3
+    if (autoMode.value) {
+      await new Promise(r => setTimeout(r, 1000))
+      emit('completed', { simulation_id: simulationId.value, max_rounds: parseInt(simConfig.value.rounds) })
+    } else {
+      scrollToNextButton(3)
+    }
   } catch (err) {
     phaseError.value[2] = err.message
   } finally {
@@ -548,6 +607,15 @@ async function loadProfiles() {
     if (loaded.length > 0) profiles.value = loaded
   } catch (e) { /* silent */ }
 }
+
+onMounted(() => {
+  if (autoMode.value) {
+    // Auto mode: kick off the first phase automatically after a short delay
+    setTimeout(() => {
+      initSimulation()
+    }, 800)
+  }
+})
 </script>
 
 <style scoped>
@@ -643,7 +711,47 @@ async function loadProfiles() {
 .env-setup__error { display: flex; align-items: center; gap: .5rem; padding: .75rem 1rem; background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2); border-radius: var(--radius-md); color: #f87171; font-size: .8125rem; margin-bottom: 1rem; }
 
 /* CTA */
-.env-setup__cta { display: flex; gap: .75rem; padding-top: .25rem; }
+.env-setup__cta { display: flex; gap: .75rem; padding-top: .25rem; position: relative; }
+
+/* Highlight flash when auto-scrolled to */
+.env-setup__cta--highlight {
+  animation: cta-highlight-flash 1.8s ease-out forwards;
+}
+@keyframes cta-highlight-flash {
+  0%   { background: rgba(255, 90, 31, 0.12); border-radius: 8px; }
+  100% { background: transparent; }
+}
+
+/* Pulse ring on the primary button when it's a manual-mode "action needed" moment */
+.env-setup__cta .btn-primary,
+.env-setup__launch-btn {
+  animation: cta-pulse-glow 2s ease-in-out infinite;
+}
+@keyframes cta-pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 90, 31, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(255, 90, 31, 0.22); }
+}
+
+/* Auto-mode banner */
+.env-setup__auto-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 1rem;
+  background: rgba(255, 90, 31, 0.05);
+  border: 1px solid rgba(255, 90, 31, 0.15);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.env-setup__auto-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+  animation: blink 1.2s step-end infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
 /* Complete */
 .env-setup__complete { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; background: rgba(134,239,172,.05); border: 1px solid rgba(134,239,172,.12); border-radius: var(--radius-md); margin-top: .75rem; }
