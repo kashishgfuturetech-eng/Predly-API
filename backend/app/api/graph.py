@@ -531,9 +531,9 @@ def build_graph():
                 )
                 
                 episode_uuids = builder.add_text_batches(
-                    graph_id, 
+                    graph_id,
                     chunks,
-                    batch_size=3,
+                    batch_size=10,
                     progress_callback=add_progress_callback
                 )
                 
@@ -552,7 +552,7 @@ def build_graph():
                         progress=progress
                     )
                 
-                builder._wait_for_episodes(episode_uuids, wait_progress_callback)
+                builder._wait_for_episodes(episode_uuids, graph_id=graph_id, progress_callback=wait_progress_callback)
                 
                 # Get graph data
                 task_manager.update_task(

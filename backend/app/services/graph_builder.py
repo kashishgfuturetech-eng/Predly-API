@@ -55,9 +55,9 @@ class GraphBuilderService:
         text: str,
         ontology: Dict[str, Any],
         graph_name: str = "Predly Graph",
-        chunk_size: int = 500,
-        chunk_overlap: int = 50,
-        batch_size: int = 3
+        chunk_size: int = 1500,
+        chunk_overlap: int = 100,
+        batch_size: int = 10
     ) -> str:
         """
         Build graph asynchronously
@@ -156,7 +156,8 @@ class GraphBuilderService:
             
             self._wait_for_episodes(
                 episode_uuids,
-                lambda msg, prog: self.task_manager.update_task(
+                graph_id=graph_id,
+                progress_callback=lambda msg, prog: self.task_manager.update_task(
                     task_id,
                     progress=60 + int(prog * 0.3),  # 60-90%
                     message=msg
@@ -336,8 +337,8 @@ class GraphBuilderService:
                         if ep_uuid:
                             episode_uuids.append(ep_uuid)
                 
-                # Avoid sending requests too quickly
-                time.sleep(1)
+                # Brief pause to avoid rate limiting
+                time.sleep(0.3)
                 
             except Exception as e:
                 if progress_callback:
@@ -349,58 +350,79 @@ class GraphBuilderService:
     def _wait_for_episodes(
         self,
         episode_uuids: List[str],
+        graph_id: str = None,
         progress_callback: Optional[Callable] = None,
-        timeout: int = 600
+        timeout: int = 1200
     ):
-        """Wait for all episodes to finish processing (by querying each episode's processed status)"""
+        """Wait for Zep to finish processing episodes by watching the graph node count stabilize."""
         if not episode_uuids:
             if progress_callback:
                 progress_callback("Nothing to wait for (no episodes)", 1.0)
             return
-        
-        start_time = time.time()
-        pending_episodes = set(episode_uuids)
-        completed_count = 0
+
         total_episodes = len(episode_uuids)
-        
         if progress_callback:
-            progress_callback(f"Waiting for {total_episodes} text chunks to be processed...", 0)
-        
-        while pending_episodes:
-            if time.time() - start_time > timeout:
+            progress_callback(f"Waiting for {total_episodes} chunks to be processed by Zep...", 0)
+
+        if not graph_id:
+            # No graph_id to poll — fall back to a simple time-based wait
+            wait_secs = min(30 + total_episodes * 3, timeout)
+            elapsed = 0
+            while elapsed < wait_secs:
+                time.sleep(10)
+                elapsed += 10
                 if progress_callback:
                     progress_callback(
-                        f"Some chunks timed out, completed {completed_count}/{total_episodes}",
-                        completed_count / total_episodes
+                        f"Zep processing... ({elapsed}s / ~{wait_secs}s estimated)",
+                        elapsed / wait_secs
+                    )
+            if progress_callback:
+                progress_callback("Processing complete (estimated)", 1.0)
+            return
+
+        # Poll the graph node count — when it stops increasing for 3 consecutive checks, we're done
+        start_time = time.time()
+        prev_node_count = -1
+        stable_checks = 0
+        required_stable = 3
+        check_interval = 10  # seconds between node-count checks
+
+        while True:
+            elapsed = int(time.time() - start_time)
+            if elapsed >= timeout:
+                if progress_callback:
+                    progress_callback(
+                        f"Timed out after {elapsed}s — graph may still be processing in background",
+                        1.0
                     )
                 break
-            
-            # Check processing status of each episode
-            for ep_uuid in list(pending_episodes):
-                try:
-                    episode = self.client.graph.episode.get(uuid_=ep_uuid)
-                    is_processed = getattr(episode, 'processed', False)
-                    
-                    if is_processed:
-                        pending_episodes.remove(ep_uuid)
-                        completed_count += 1
-                        
-                except Exception as e:
-                    # Ignore individual query errors and continue
-                    pass
-            
-            elapsed = int(time.time() - start_time)
+
+            try:
+                nodes = fetch_all_nodes(self.client, graph_id)
+                node_count = len(nodes) if nodes else 0
+            except Exception:
+                node_count = prev_node_count
+
+            if node_count == prev_node_count and node_count >= 0:
+                stable_checks += 1
+            else:
+                stable_checks = 0
+
             if progress_callback:
+                progress = min(elapsed / max(total_episodes * 8, 60), 0.99)
                 progress_callback(
-                    f"Zep processing... {completed_count}/{total_episodes} done, {len(pending_episodes)} pending ({elapsed}s)",
-                    completed_count / total_episodes if total_episodes > 0 else 0
+                    f"Zep processing... {node_count} nodes so far ({elapsed}s)",
+                    progress
                 )
-            
-            if pending_episodes:
-                time.sleep(3)  # Check every 3 seconds
-        
+
+            if stable_checks >= required_stable:
+                break
+
+            prev_node_count = node_count
+            time.sleep(check_interval)
+
         if progress_callback:
-            progress_callback(f"Processing complete: {completed_count}/{total_episodes}", 1.0)
+            progress_callback("Processing complete", 1.0)
     
     def _get_graph_info(self, graph_id: str) -> GraphInfo:
         """Retrieve graph information"""
