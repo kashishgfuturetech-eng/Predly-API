@@ -81,6 +81,7 @@
             <div
               v-for="(section, idx) in reportOutline.sections"
               :key="idx"
+              :ref="el => { if (el) sectionEls[idx] = el }"
               class="report__section"
               :class="{
                 'report__section--active':    currentSectionIdx === idx + 1,
@@ -188,7 +189,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { getToken } from '../auth.js'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -217,6 +218,17 @@ const tokensUsed      = ref(null)
 const errorMsg        = ref('')
 const activeReportId  = ref(null)      // real report_id from backend
 const activeTaskId    = ref(null)      // task_id for polling generate/status
+
+// Auto-scroll: array of section DOM elements (populated by :ref in v-for)
+const sectionEls = ref([])
+
+watch(currentSectionIdx, (idx) => {
+  if (!props.autoMode || idx < 1) return
+  nextTick(() => {
+    const el = sectionEls.value[idx - 1]
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+})
 const agentLogLines   = ref([])        // live agent activity lines
 const generateProgress = ref(0)
 const generatingMsg   = ref('')

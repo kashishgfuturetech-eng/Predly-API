@@ -17,7 +17,7 @@
     </div>
 
     <!-- ── Phase 01: Simulation Instance ── -->
-    <div class="env-setup__phase card" :class="phaseClass(0)">
+    <div ref="envPhaseRef0" class="env-setup__phase card" :class="phaseClass(0)">
       <div class="env-setup__phase-header">
         <span class="chip chip-blue label-sm">POST /api/simulation/create</span>
         <div class="env-setup__phase-title-row">
@@ -61,7 +61,7 @@
     </div>
 
     <!-- ── Phase 02: Entity Preview ── -->
-    <div class="env-setup__phase card" :class="phaseClass(1)">
+    <div ref="envPhaseRef1" class="env-setup__phase card" :class="phaseClass(1)">
       <div class="env-setup__phase-header">
         <span class="chip chip-blue label-sm">GET /api/simulation/entities/:graph_id</span>
         <div class="env-setup__phase-title-row">
@@ -122,7 +122,7 @@
     </div>
 
     <!-- ── Phase 03: Configure + Generate ── -->
-    <div class="env-setup__phase card" :class="phaseClass(2)">
+    <div ref="envPhaseRef2" class="env-setup__phase card" :class="phaseClass(2)">
       <div class="env-setup__phase-header">
         <span class="chip chip-blue label-sm">POST /api/simulation/configure → /prepare</span>
         <div class="env-setup__phase-title-row">
@@ -304,7 +304,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { createSimulation, prepareSimulation, configureSimulation } from '../api.js'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10000/api'
@@ -317,6 +317,11 @@ const autoMode = computed(() => !!props.projectData?.autoMode)
 const phase        = ref(0)
 const isProcessing = ref(false)
 const isGenerating = ref(false)
+
+// Auto-scroll to the newly active phase card in auto mode
+watch(phase, (val) => {
+  if (val >= 0 && val <= 2) scrollToEnvPhase(val)
+})
 const simulationId = ref(null)
 const profiles     = ref([])
 const statusMsg    = ref('')
@@ -328,6 +333,20 @@ const phase0Ref = ref(null)
 const phase1Ref = ref(null)
 const phase2Ref = ref(null)
 const phase3Ref = ref(null)
+
+// Auto-scroll: in auto mode, scroll to newly active phase card
+const envPhaseRef0 = ref(null)
+const envPhaseRef1 = ref(null)
+const envPhaseRef2 = ref(null)
+const envPhaseRefs = [envPhaseRef0, envPhaseRef1, envPhaseRef2]
+
+function scrollToEnvPhase(idx) {
+  if (!autoMode.value) return
+  nextTick(() => {
+    const el = envPhaseRefs[idx]?.value
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+}
 
 function scrollToNextButton(phaseIdx) {
   if (autoMode.value) return
@@ -349,7 +368,7 @@ const showAllAgents = ref(false)
 
 const simConfig = ref({
   duration:    '72',
-  rounds:      '100',
+  rounds:      '10',
   activeStart: '08:00',
   activeEnd:   '22:00',
   agentCount:  '9',
@@ -374,7 +393,7 @@ const instanceInfo = computed(() => [
 
 const configFields = [
   { key: 'duration',    label: 'Duration (hours)',   type: 'number', placeholder: '72'    },
-  { key: 'rounds',      label: 'Total Rounds',       type: 'number', placeholder: '100'   },
+  { key: 'rounds',      label: 'Total Rounds',       type: 'number', placeholder: '10'   },
   { key: 'activeStart', label: 'Active Hours Start', type: 'text',   placeholder: '08:00' },
   { key: 'activeEnd',   label: 'Active Hours End',   type: 'text',   placeholder: '22:00' },
   { key: 'platform',    label: 'Platform',           type: 'select', options: ['Both', 'Info Plaza', 'Topic Community'] },

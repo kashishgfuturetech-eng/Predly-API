@@ -12,7 +12,7 @@
       <TopNav show-links :project-id="projectId" active-step="Graph Build" />
       <SideNav :current-step="currentStep" :completed-steps="completedSteps" @navigate="navigateTo" />
 
-      <div class="main-view__content">
+      <div ref="contentRef" class="main-view__content">
         <!-- Page Header -->
         <header class="main-view__header">
           <div class="main-view__breadcrumb">
@@ -67,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import TopNav from '../components/TopNav.vue'
 import SideNav from '../components/SideNav.vue'
@@ -84,6 +84,16 @@ const router = useRouter()
 const currentStep = ref('graph')
 const completedSteps = ref([])
 const globalAutoMode = ref(false)
+const contentRef = ref(null)
+
+// Auto-scroll content area to top whenever the active step changes in auto mode
+watch(currentStep, () => {
+  if (!globalAutoMode.value) return
+  nextTick(() => {
+    if (contentRef.value) contentRef.value.scrollTo({ top: 0, behavior: 'smooth' })
+    else window.scrollTo({ top: 0, behavior: 'smooth' })
+  })
+})
 
 const projectData = ref({
   project_id:    props.projectId || null,
@@ -91,7 +101,7 @@ const projectData = ref({
   simulation_id: null,
   report_id:     null,
   ontology:      null,
-  max_rounds:    100,
+  max_rounds:    10,
   autoMode:      false,
 })
 

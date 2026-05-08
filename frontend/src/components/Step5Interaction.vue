@@ -53,7 +53,7 @@
       </div>
 
       <!-- RIGHT: Chat Interface -->
-      <div class="interact__chat card">
+      <div ref="chatPanelRef" class="interact__chat card">
         <!-- Chat Header -->
         <div class="interact__chat-header">
           <div class="interact__chat-title-row">
@@ -190,6 +190,7 @@ async function apiFetch(url, options = {}) {
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const messagesRef      = ref(null)
+const chatPanelRef     = ref(null)
 const inputText        = ref('')
 const messages         = ref([])
 const isTyping         = ref(false)
@@ -204,6 +205,10 @@ const reportContext = ref('')
 
 // ─── Load real report on mount ────────────────────────────────────────────────
 onMounted(async () => {
+  // Scroll chat into view when this step loads
+  nextTick(() => {
+    if (chatPanelRef.value) chatPanelRef.value.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
   if (!props.reportId || props.reportId === 'REF-PENDING') return
   reportLoading.value = true
   try {

@@ -8,7 +8,7 @@
     </div>
 
     <!-- Control Bar -->
-    <div class="sim__control-bar glass">
+    <div ref="controlBarRef" class="sim__control-bar glass">
       <!-- Platform Statuses -->
       <div class="sim__platforms">
         <!-- Info Plaza (Twitter-like) -->
@@ -106,7 +106,7 @@
     <!-- Main Split Layout -->
     <div class="sim__split">
       <!-- LEFT: Action Log -->
-      <div class="sim__log card">
+      <div ref="actionLogRef" class="sim__log card">
         <div class="sim__log-header">
           <div class="sim__log-title">
             <span class="material-symbols-outlined" style="font-size:16px;color:var(--secondary)">terminal</span>
@@ -228,7 +228,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted, onMounted, nextTick } from 'vue'
+import { ref, computed, onUnmounted, onMounted, nextTick, watch } from 'vue'
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 // simulationId: The sim_xxxx ID returned by Step 2's /api/simulation/create
@@ -252,6 +252,15 @@ const isCompleted = ref(false)
 const activeFilter = ref('All')
 const logBodyRef = ref(null)
 const errorMsg = ref('')
+
+// Auto-scroll refs
+const controlBarRef = ref(null)
+const actionLogRef  = ref(null)
+
+function simScrollTo(el) {
+  if (!props.autoMode || !el) return
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 // Tracks the last action index we have already ingested from the backend
 const lastActionOffset = ref(0)
@@ -279,6 +288,16 @@ const runStatus = ref({
 const actionLog = ref([])
 const activityBars = ref(Array.from({ length: 24 }, (_, i) => ({ round: i * 4, twitter: 0, reddit: 0 })))
 const graphAxisLabels = ['0', '25', '50', '75', '100']
+
+// Auto-scroll watches
+watch(isRunning, (val) => {
+  if (val) nextTick(() => simScrollTo(controlBarRef.value))
+})
+watch(actionLog, () => {
+  if (props.autoMode && actionLog.value.length === 1) {
+    nextTick(() => simScrollTo(actionLogRef.value))
+  }
+}, { deep: true })
 
 const agentGrid = ref(Array.from({ length: 50 }, (_, i) => ({
   id: i,

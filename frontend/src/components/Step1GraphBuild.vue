@@ -292,7 +292,7 @@
     <!-- ══════════════════════════════════════════════════════
          RIGHT PANEL — CONFIGURATION
     ══════════════════════════════════════════════════════ -->
-    <aside class="gb-config">
+    <aside ref="configPanelRef" class="gb-config">
       <div class="gb-config__header">
         <span class="gb-config__header-label label-sm" style="letter-spacing:0.12em;color:var(--text-muted)">CONFIGURATION PANEL</span>
         <h2 class="gb-config__title font-headline">Build Engine</h2>
@@ -354,7 +354,7 @@
       <div class="gb-config__phases">
 
         <!-- Phase 1: Ontology Generation -->
-        <div class="gb-config__phase" :class="phaseCardClass(0)">
+        <div ref="phaseRef0" class="gb-config__phase" :class="phaseCardClass(0)">
           <div class="gb-config__phase-top">
             <div>
               <div class="gb-config__phase-name">Ontology Generation</div>
@@ -369,7 +369,7 @@
         </div>
 
         <!-- Phase 2: GraphRAG Build -->
-        <div class="gb-config__phase" :class="phaseCardClass(1)">
+        <div ref="phaseRef1" class="gb-config__phase" :class="phaseCardClass(1)">
           <div class="gb-config__phase-top">
             <div>
               <div class="gb-config__phase-name">GraphRAG Build</div>
@@ -393,7 +393,7 @@
         </div>
 
         <!-- Phase 3: Build Finalization -->
-        <div class="gb-config__phase" :class="phaseCardClass(2)">
+        <div ref="phaseRef2" class="gb-config__phase" :class="phaseCardClass(2)">
           <div class="gb-config__phase-top">
             <div>
               <div class="gb-config__phase-name">Build Finalization</div>
@@ -457,7 +457,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 
 const props = defineProps({ projectData: Object })
 const emit = defineEmits(['completed'])
@@ -465,6 +465,27 @@ const emit = defineEmits(['completed'])
 // ── State ──────────────────────────────────────────────────────────────────
 const autoMode = ref(false)
 const currentPhase = ref(1)   // 1 = ready to build, 2 = build complete
+
+// Phase card DOM refs for auto-scroll
+const phaseRef0 = ref(null)
+const phaseRef1 = ref(null)
+const phaseRef2 = ref(null)
+const phaseRefs = [phaseRef0, phaseRef1, phaseRef2]
+const configPanelRef = ref(null)
+
+// Auto-scroll: when in auto mode, scroll the active phase into view inside the config panel
+function scrollToActivePhase(phaseIndex) {
+  if (!autoMode.value) return
+  nextTick(() => {
+    const panel = configPanelRef.value
+    const el = phaseRefs[phaseIndex]?.value
+    if (!panel || !el) return
+    const panelTop = panel.getBoundingClientRect().top
+    const elTop = el.getBoundingClientRect().top
+    const offset = elTop - panelTop + panel.scrollTop - (panel.clientHeight / 2) + (el.offsetHeight / 2)
+    panel.scrollTo({ top: offset, behavior: 'smooth' })
+  })
+}
 const builtGraphId = ref(null) // stores the real graph_id returned by the backend
 const isProcessing = ref(false)
 const phaseError = ref('')
@@ -524,6 +545,22 @@ const graphRagStatus = ref('wait')   // wait | active | done
 const graphRagPct = ref(0)
 const finalizationStatus = ref('wait')
 const finalizationPct = ref(0)
+
+// ── Auto-scroll watches (active in auto mode only) ───────────────────────────
+watch(graphRagStatus, (val) => {
+  if (val === 'active') scrollToActivePhase(1)
+  else if (val === 'done') scrollToActivePhase(2)
+})
+watch(finalizationStatus, (val) => {
+  if (val === 'active') scrollToActivePhase(2)
+})
+watch(autoMode, (val) => {
+  if (val && isProcessing.value) {
+    if (finalizationStatus.value === 'active') scrollToActivePhase(2)
+    else if (graphRagStatus.value === 'active') scrollToActivePhase(1)
+    else scrollToActivePhase(0)
+  }
+})
 
 // ── Project info ────────────────────────────────────────────────────────────
 const projectTitle = computed(() => {
